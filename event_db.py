@@ -15,9 +15,8 @@ class EventDB:
         for chain_id, value in CHAINS.items():
             self.networks[chain_id] = NetworkApi(chain_id, value[1])
 
-    
     def dei_total_supply(self):
-        total_supply = sum([self.networks[chain_id].dei_total_supply() for chain_id in self.networks])
+        total_supply = sum(self.networks[chain_id].dei_total_supply() for chain_id in self.networks)
         self.insert(
             table_name='dei_total_supply',
             documents=[
@@ -28,12 +27,28 @@ class EventDB:
             ]
         )
 
-    
+    def dei_circulating_marketcap(self):
+        marketcap = sum(self.networks[chain_id].dei_circulating_marketcap() for chain_id in self.networks)
+        self.insert(
+            table_name='dei_circulating_marketcap',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'marketcap': str(marketcap)
+                }
+            ]
+        )
+
+    def get_dei_total_supply(self):
+        return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
+
+    def get_dei_circulating_marketcap(self):
+        return self.db['dei_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
+
     def insert(self, table_name: str, documents: List[dict]):
         if documents:
             self.db[table_name].insert_many(documents)
 
-    
     def get_last_week_minted_dei(self):
         last_week = int(time.time()) - 7 * 24 * 60 * 60
         result = 0
@@ -47,7 +62,6 @@ class EventDB:
             result += chain_amount
         return result
 
-   
     def dei_minted_events(self):
         for chain_id, network in self.networks.items():
             last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[('block', DESCENDING)])
@@ -63,7 +77,6 @@ class EventDB:
             print(events)
             self.insert(f'minted_dei_{chain_id}', events)
 
-    
     def deus_total_supply(self):
         total_supply = sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks])
         self.insert(
@@ -75,7 +88,6 @@ class EventDB:
                 }
             ]
         )
-
 
     def deus_burned_events(self):
         for chain_id, network in self.networks.items():
@@ -94,4 +106,3 @@ class EventDB:
 if __name__ == '__main__':
     e = EventDB(database_name)
     e.deus_burned_events()
-
