@@ -36,6 +36,18 @@ class NetworkApi:
         price = (native_reserve0 * usdc_reserve * 1e12) / (deus_reserve * native_reserve1)
         return price
 
+    def get_native_price(self):
+        usdc_native = self.w3.eth.contract(PAIRS[self.chain_id]['native-usdc'], abi=PAIR_ABI)
+        if usdc_native.functions.token0().call() == USDC_ADDRESSES[self.chain_id]:
+            usdc_reserve = usdc_native.functions.getReserves().call()[0]
+            native_reserve = usdc_native.functions.getReserves().call()[1]
+        else:
+            usdc_reserve = usdc_native.functions.getReserves().call()[1]
+            native_reserve = usdc_native.functions.getReserves().call()[0]
+
+        price = (usdc_reserve * 1e12) / native_reserve
+        return price
+
     def dei_total_supply(self):
         return self.dei_contract.functions.totalSupply().call()
 
