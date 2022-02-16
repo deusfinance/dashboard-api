@@ -15,16 +15,23 @@ class EventDB:
             self.networks[chain_id] = NetworkApi(chain_id)
 
     def dei_total_supply(self):
-        dei_total_supply = 0 
-        for chain_id, network in self.networks.items():
-            dei_total_supply += network.dei_total_supply()
-        print(dei_total_supply)
-        # add to db
-    
-    def insert(self, table_name: str, documnts: List[dict]]):
+        total_supply = sum([self.networks[chain_id].dei_total_supply() for chain_id in self.networks])
+        self.insert(
+            table_name='dei_total_supply',
+            documnts=[
+                {
+                    'timestamp': int(time.time()),
+                    'total_supply': str(total_supply)
+                }
+            ]
+        )
+
+
+    def insert(self, table_name: str, documnts: List[dict]):
         if documnts:
             self.db[table_name].insert_many(documnts)
 
+   
     def dei_minted_events(self):
         for chain_id, network in self.networks.items():
             last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[( 'block', DESCENDING )])
@@ -40,8 +47,16 @@ class EventDB:
 
 
     def deus_total_supply(self):
-        print(sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks]))
-        # add to db
+        total_supply = sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks])
+        self.insert(
+            table_name='deus_total_supply',
+            documnts=[
+                {
+                    'timestamp': int(time.time()),
+                    'total_supply': str(total_supply)
+                }
+            ]
+        )
 
 if __name__ == '__main__':
     e = EventDB(database_name)
