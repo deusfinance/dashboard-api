@@ -74,17 +74,20 @@ class EventDB:
         if documents:
             self.db[table_name].insert_many(documents)
 
-    def get_last_week_minted_dei(self):
-        last_week = int(time.time()) - 7 * 24 * 60 * 60
+    def get_minted_dei(self, interval):
+        from_time = int(time.time()) - interval
         result = 0
         for chain_id, network in self.networks.items():
             chain_amount = 0
             for item in self.db[f'minted_dei_{chain_id}'].find(sort=[('timestamp', DESCENDING)]):
-                if item['timestamp'] < last_week:
+                if item['timestamp'] < from_time:
                     break
                 chain_amount += int(item['amount'])
             result += chain_amount
         return result
+
+    def get_last_week_minted_dei(self):
+        return self.get_minted_dei(7 * 24 * 60 * 60)
 
     @error_handler
     def dei_minted_events(self):
