@@ -1,7 +1,7 @@
 from typing import List
 from config import CHAINS
 from network_api import NetworkApi
-
+import time 
 from pymongo import MongoClient, DESCENDING
 
 mongo_client = MongoClient('localhost', 27017)
@@ -37,6 +37,11 @@ class EventDB:
                 last_block = last_item['block']
             events = network.dei_minted_events(last_block)
             self.insert(f'minted_dei_{chain_id}', events)
+
+
+    def deus_total_supply(self):
+        print(sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks]))
+        # add to db
 
 if __name__ == '__main__':
     e = EventDB(database_name)
