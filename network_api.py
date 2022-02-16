@@ -9,8 +9,21 @@ class NetworkApi:
         self.rpc = CHAINS[chain_id]   
         self.w3 = Web3(WebsocketProvider(self.rpc)) 
         self.dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
-        # self.deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEI_ABI)
-        # self.contract.events.DEIMinted.createFilter()
+        
 
     def dei_total_supply(self):
         return self.dei_contract.functions.totalSupply().call()
+
+
+    def dei_minted_events(self, from_block):
+        result = []
+        entities = self.dei_contract.events.DEIMinted.createFilter(fromBlock=from_block).get_all_entries()
+        for ent in entities:
+            result.append({
+                'amount': ent.args.amount,
+                'block': ent.blockNumber,
+                'timestamp': self.w3.eth.get_block(ent.blockNumber).timestamp
+            })
+        return result
+
+
