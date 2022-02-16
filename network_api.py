@@ -25,14 +25,14 @@ class NetworkApi:
         else:
             deus_reserve = deus_native.functions.getReserves().call()[1]
             native_reserve0 = deus_native.functions.getReserves().call()[0]
-        print(deus_reserve, native_reserve0)
+
         if usdc_native.functions.token0().call() == USDC_ADDRESSES[self.chain_id]:
             usdc_reserve = usdc_native.functions.getReserves().call()[0]
             native_reserve1 = usdc_native.functions.getReserves().call()[1]
         else:
             usdc_reserve = usdc_native.functions.getReserves().call()[1]
             native_reserve1 = usdc_native.functions.getReserves().call()[0]
-        print(usdc_reserve, native_reserve1)
+
         price = (native_reserve0 * usdc_reserve * 1e12) / (deus_reserve * native_reserve1)
         return price
 
@@ -79,8 +79,3 @@ class NetworkApi:
                 'timestamp': self.w3.eth.get_block(ent.blockNumber).timestamp
             })
         return result
-
-
-if __name__ == '__main__':
-    net = NetworkApi(250, [], False)
-    print(net.get_deus_price())
