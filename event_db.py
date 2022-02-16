@@ -15,6 +15,7 @@ class EventDB:
         for chain_id, value in CHAINS.items():
             self.networks[chain_id] = NetworkApi(chain_id, value[1])
 
+    
     def dei_total_supply(self):
         total_supply = sum([self.networks[chain_id].dei_total_supply() for chain_id in self.networks])
         self.insert(
@@ -27,10 +28,12 @@ class EventDB:
             ]
         )
 
+    
     def insert(self, table_name: str, documents: List[dict]):
         if documents:
             self.db[table_name].insert_many(documents)
 
+    
     def get_last_week_minted_dei(self):
         last_week = int(time.time()) - 7 * 24 * 60 * 60
         result = 0
@@ -44,6 +47,7 @@ class EventDB:
             result += chain_amount
         return result
 
+   
     def dei_minted_events(self):
         for chain_id, network in self.networks.items():
             last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[('block', DESCENDING)])
@@ -59,6 +63,7 @@ class EventDB:
             print(events)
             self.insert(f'minted_dei_{chain_id}', events)
 
+    
     def deus_total_supply(self):
         total_supply = sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks])
         self.insert(
@@ -72,7 +77,21 @@ class EventDB:
         )
 
 
+    def deus_burned_events(self):
+        for chain_id, network in self.networks.items():
+            last_item = self.db[f'burned_deus_{chain_id}'].find_one(sort=[('block', DESCENDING)])
+            if not last_item:
+                last_week = int(time.time()) - 7 * 24 * 60 * 60
+                last_block = network.w3.eth.block_number
+                while network.w3.eth.get_block(last_block).timestamp >= last_week:
+                    last_block -= 1000
+            else:
+                last_block = last_item['block']
+            events = network.deus_burned_events(last_block)
+            self.insert(f'burned_deus_{chain_id}', events)
+
+
 if __name__ == '__main__':
     e = EventDB(database_name)
-    e.dei_minted_events()
-    print(e.get_last_week_minted_dei() * 1e-18)
+    e.deus_burned_events()
+

@@ -35,3 +35,20 @@ class NetworkApi:
 
     def deus_total_supply(self):
         return self.deus_contract.functions.totalSupply().call()
+
+
+    def deus_burned_events(self, from_block):
+        latest_block = self.w3.eth.block_number
+        result = []
+        entities = []
+        size = 10000
+        for i in range(from_block, latest_block + 1, size):
+            entities.extend(self.deus_contract.events.DEUSBurned.createFilter(fromBlock=i,
+                                                                            toBlock=i + size).get_all_entries())
+        for ent in entities:
+            result.append({
+                'amount': str(ent.args.amount),
+                'block': ent.blockNumber,
+                'timestamp': self.w3.eth.get_block(ent.blockNumber).timestamp
+            })
+        return result
