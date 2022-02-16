@@ -1,24 +1,25 @@
 from typing import List
 from config import CHAINS
 from network_api import NetworkApi
-import time 
+import time
 from pymongo import MongoClient, DESCENDING
 
 mongo_client = MongoClient('localhost', 27017)
 database_name = 'statistics'
 
+
 class EventDB:
     def __init__(self, db_name):
         self.db = mongo_client[db_name]
         self.networks = dict()
-        for chain_id in CHAINS:
-            self.networks[chain_id] = NetworkApi(chain_id)
+        for chain_id, value in CHAINS.items():
+            self.networks[chain_id] = NetworkApi(chain_id, value[1])
 
     def dei_total_supply(self):
         total_supply = sum([self.networks[chain_id].dei_total_supply() for chain_id in self.networks])
         self.insert(
             table_name='dei_total_supply',
-            documnts=[
+            documents=[
                 {
                     'timestamp': int(time.time()),
                     'total_supply': str(total_supply)
@@ -26,31 +27,43 @@ class EventDB:
             ]
         )
 
+    def insert(self, table_name: str, documents: List[dict]):
+        if documents:
+            self.db[table_name].insert_many(documents)
 
-    def insert(self, table_name: str, documnts: List[dict]):
-        if documnts:
-            self.db[table_name].insert_many(documnts)
+    def get_last_week_minted_dei(self):
+        last_week = int(time.time()) - 7 * 24 * 60 * 60
+        result = 0
+        for chain_id, network in self.networks.items():
+            chain_amount = 0
+            for item in self.db[f'minted_dei_{chain_id}'].find(sort=[('timestamp', DESCENDING)]):
+                if item['timestamp'] < last_week:
+                    break
+                chain_amount += int(item['amount'])
+            print(chain_id, chain_amount * 1e-18, sep='\t')
+            result += chain_amount
+        return result
 
-   
     def dei_minted_events(self):
         for chain_id, network in self.networks.items():
-            last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[( 'block', DESCENDING )])
+            last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[('block', DESCENDING)])
             if not last_item:
                 last_week = int(time.time()) - 7 * 24 * 60 * 60
-                last_block = network.w3.eth.block_number()
+                last_block = network.w3.eth.block_number
                 while network.w3.eth.get_block(last_block).timestamp >= last_week:
-                    last_block -= 1000
+                    print(last_block)
+                    last_block -= 100000
             else:
                 last_block = last_item['block']
-            events = network.dei_minted_events(last_block)
+            events = network.dei_minted_events(last_block + 1)
+            print(events)
             self.insert(f'minted_dei_{chain_id}', events)
-
 
     def deus_total_supply(self):
         total_supply = sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks])
         self.insert(
             table_name='deus_total_supply',
-            documnts=[
+            documents=[
                 {
                     'timestamp': int(time.time()),
                     'total_supply': str(total_supply)
@@ -58,7 +71,8 @@ class EventDB:
             ]
         )
 
+
 if __name__ == '__main__':
     e = EventDB(database_name)
     e.dei_minted_events()
-
+    print(e.get_last_week_minted_dei() * 1e-18)
