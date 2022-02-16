@@ -15,7 +15,13 @@ class EventDB:
         print(dei_total_supply)
         # add to db
 
+
+    def deus_total_supply(self):
+        print(sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks]))
+        # add to db
+
 if __name__ == '__main__':
     e = EventDB()
     e.dei_total_supply()
+    # print(e.deus_total_supply())
 
