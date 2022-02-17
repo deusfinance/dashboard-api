@@ -1,51 +1,51 @@
 from web3 import Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
-from config import CHAINS, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, STAKINGS, STAKING_ABI, USDC_ADDRESSES, PAIRS, PAIR_ABI
+from config import CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, STAKING_ABI, PAIR_ABI, ERC20_ABI
 
 
 class NetworkApi:
 
-    def __init__(self, chain_id, dao_list, is_poa=False) -> None:
+    def __init__(self, rpc, chain_id, source_price_chain, dei_ignore_list, deus_ignore_list, usdc_address, pairs, stakings, path_to_usdc, is_poa=False) -> None:
         self.chain_id = chain_id
-        self.dao_list = dao_list.copy()
-        self.rpc = CHAINS[chain_id][0]
+        self.source_price_chain = source_price_chain
+        self.dei_ignore_list = dei_ignore_list.copy()
+        self.deus_ignore_list = deus_ignore_list.copy()
+        self.usdc_address = usdc_address
+        self.pairs = pairs
+        self.stakings = stakings
+        self.path_to_usdc = path_to_usdc
+        self.rpc = rpc
         self.w3 = Web3(WebsocketProvider(self.rpc))
         if is_poa:
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
         self.deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
 
-    def get_deus_price(self):
-        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
-        usdc_native = self.w3.eth.contract(PAIRS[self.chain_id]['native-usdc'], abi=PAIR_ABI)
-        if deus_native.functions.token0().call() == DEUS_ADDRESS:
-            deus_reserve = deus_native.functions.getReserves().call()[0]
-            native_reserve0 = deus_native.functions.getReserves().call()[1]
-        else:
-            deus_reserve = deus_native.functions.getReserves().call()[1]
-            native_reserve0 = deus_native.functions.getReserves().call()[0]
+    def get_source_deus_price(self):
+        return self.get_token_price(DEUS_ADDRESS, pair_addresses=CONFIG[self.source_price_chain]['path_to_usdc'][DEUS_ADDRESS])
 
-        if usdc_native.functions.token0().call() == USDC_ADDRESSES[self.chain_id]:
-            usdc_reserve = usdc_native.functions.getReserves().call()[0]
-            native_reserve1 = usdc_native.functions.getReserves().call()[1]
-        else:
-            usdc_reserve = usdc_native.functions.getReserves().call()[1]
-            native_reserve1 = usdc_native.functions.getReserves().call()[0]
+    def get_token_price(self, token_address, pair_addresses=None):
+        if not pair_addresses:
+            pair_addresses = self.path_to_usdc[token_address]
+        price = 1
+        base_address = token_address
+        for pair_address in pair_addresses:
+            pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+            token0_address = pair.functions.token0().call()
+            token1_address = pair.functions.token1().call()
+            token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
+            token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
 
-        price = (native_reserve0 * usdc_reserve * 1e12) / (deus_reserve * native_reserve1)
-        return price
-
-    def get_native_price(self):
-        usdc_native = self.w3.eth.contract(PAIRS[self.chain_id]['native-usdc'], abi=PAIR_ABI)
-        if usdc_native.functions.token0().call() == USDC_ADDRESSES[self.chain_id]:
-            usdc_reserve = usdc_native.functions.getReserves().call()[0]
-            native_reserve = usdc_native.functions.getReserves().call()[1]
-        else:
-            usdc_reserve = usdc_native.functions.getReserves().call()[1]
-            native_reserve = usdc_native.functions.getReserves().call()[0]
-
-        price = (usdc_reserve * 1e12) / native_reserve
+            if token0_address == base_address:
+                base_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
+                quote_reserve = pair.functions.getReserves().call()[1] * 10 ** (18 - token1.functions.decimals().call())
+                base_address = token1_address
+            else:
+                base_reserve = pair.functions.getReserves().call()[1] * 10 ** (18 - token1.functions.decimals().call())
+                quote_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
+                base_address = token0_address
+            price *= quote_reserve / base_reserve
         return price
 
     def dei_total_supply(self):
@@ -53,13 +53,13 @@ class NetworkApi:
 
     def dei_circulating_marketcap(self):
         marketcap = self.dei_total_supply()
-        for address in self.dao_list:
+        for address in self.dei_ignore_list:
             marketcap -= self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
         return marketcap
 
     def deus_circulating_total_supply(self):
         total_supply = self.deus_total_supply()
-        for address in self.dao_list:
+        for address in self.deus_ignore_list:
             total_supply -= self.deus_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
         return total_supply
 
@@ -100,30 +100,71 @@ class NetworkApi:
         return result
 
     
-    def deus_dex_liquidity(self):
-        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
-        if deus_native.functions.token0().call() == DEUS_ADDRESS:
-            deus_reserve = deus_native.functions.getReserves().call()[0]
-            native_reserve = deus_native.functions.getReserves().call()[1]
+    def deus_dex_liquidity_for_pair(self, pair_address):
+        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        token0_address = pair.functions.token0().call()
+        token1_address = pair.functions.token1().call()
+        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+
+        if token0_address == DEUS_ADDRESS:
+            deus_reserve = pair.functions.getReserves().call()[0]
+            quote_reserve = pair.functions.getReserves().call()[1] * 10 ** (18 - token1.functions.decimals().call())
+            quote_address = token1_address 
         else:
-            deus_reserve = deus_native.functions.getReserves().call()[1]
-            native_reserve = deus_native.functions.getReserves().call()[0]
-        
-        return deus_reserve * self.get_deus_price() + native_reserve * self.get_native_price()
+            deus_reserve = pair.functions.getReserves().call()[1]
+            quote_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
+            quote_address = token0_address 
+        return deus_reserve * self.get_source_deus_price() + quote_reserve * self.get_token_price(quote_address)
 
+    def dei_dex_liquidity_for_pair(self, pair_address):
+        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        token0_address = pair.functions.token0().call()
+        token1_address = pair.functions.token1().call()
+        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+
+        if token0_address == DEI_ADDRESS:
+            dei_reserve = pair.functions.getReserves().call()[0]
+            quote_reserve = pair.functions.getReserves().call()[1] * 10 ** (18 - token1.functions.decimals().call())
+            quote_address = token1_address 
+        else:
+            dei_reserve = pair.functions.getReserves().call()[1]
+            quote_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
+            quote_address = token0_address 
+        return dei_reserve + quote_reserve * self.get_token_price(quote_address)
     
-    def deus_lp_total_supply(self):
-        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
-        return deus_native.functions.totalSupply().call()
+    def lp_total_supply(self, pair_address):
+        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        return pair.functions.totalSupply().call()
 
 
-    def deus_staking_lp_balance(self):
-        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
-        return deus_native.functions.balanceOf(STAKINGS[self.chain_id]['deus-native'])
+    def staking_lp_balance(self, pair_address, staking_address):
+        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        return pair.functions.balanceOf(staking_address)
         
-
     def staked_deus_liquidity(self):
-        for pair in PAIRS[self.chain_id]['deus']:
+        res = 0
+        for pair_name, pair_address in self.pairs['deus'].items():
+            lp_price = self.deus_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
+            res += self.staking_lp_balance(pair_address) * lp_price
+        return res
+    
+    def staked_dei_liquidity(self):
+        res = 0
+        for pair_name, pair_address in self.pairs['dei'].items():
+            lp_price = self.dei_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
+            res += self.staking_lp_balance(pair_address) * lp_price
+        return res
 
-            lp_price = self.deus_dex_liquidity() / self.deus_lp_total_supply()
-        return self.deus_staking_lp_balance() * lp_price
+    def deus_dex_liquidity(self):
+        res = 0
+        for pair_name, pair_address in self.pairs['deus'].items():
+            res += self.deus_dex_liquidity_for_pair(pair_address)
+        return res
+
+    def dei_dex_liquidity(self):
+        res = 0
+        for pair_name, pair_address in self.pairs['dei'].items():
+            res += self.dei_dex_liquidity_for_pair(pair_address)
+        return res

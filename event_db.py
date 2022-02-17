@@ -1,7 +1,7 @@
 import sys
 import traceback
 from typing import List
-from config import CHAINS
+from config import CONFIG
 from network_api import NetworkApi
 import time
 from pymongo import MongoClient, DESCENDING
@@ -35,8 +35,19 @@ class EventDB:
     def __init__(self, db_name):
         self.db = mongo_client[db_name]
         self.networks = dict()
-        for chain_id, value in CHAINS.items():
-            self.networks[chain_id] = NetworkApi(chain_id, [], value[1])
+        for chain_id, value in CONFIG.items():
+            self.networks[chain_id] = NetworkApi(
+                rpc= value['rpc'], 
+                chain_id= chain_id, 
+                source_price_chain= value['source_price_chain'], 
+                dei_ignore_list= value['dei_ignore_list'], 
+                deus_ignore_list= value['deus_ignore_list'], 
+                usdc_address= value['usdc_address'], 
+                pairs= value['pairs'], 
+                stakings= value['stakings'],
+                path_to_usdc= value['path_to_usdc'],
+                is_poa= value['is_poa'],
+            )
 
     def insert(self, table_name: str, documents: List[dict]):
         if documents:
@@ -67,11 +78,25 @@ class EventDB:
                 }
             ]
         )
+    
+    @error_handler
+    def deus_total_supply(self):
+        total_supply = sum(self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
+        self.insert(
+            table_name='deus_total_supply',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'total_supply': str(total_supply)
+                }
+            ]
+        )  
+  
 
     @error_handler
     def deus_circulating_marketcap(self):
         total_supply = sum(self.networks[chain_id].deus_circulating_total_supply() for chain_id in self.networks)
-        price = self.networks[250].get_deus_price()
+        price = self.networks[250].get_source_deus_price()
         self.insert(
             table_name='deus_circulating_marketcap',
             documents=[
@@ -97,19 +122,6 @@ class EventDB:
             self.insert(f'minted_dei_{chain_id}', events)
 
     @error_handler
-    def deus_total_supply(self):
-        total_supply = sum(self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
-        self.insert(
-            table_name='deus_total_supply',
-            documents=[
-                {
-                    'timestamp': int(time.time()),
-                    'total_supply': str(total_supply)
-                }
-            ]
-        )  
-  
-    @error_handler
     def deus_burned_events(self):
         for chain_id, network in self.networks.items():
             last_item = self.db[f'burned_deus_{chain_id}'].find_one(sort=[('block', DESCENDING)])
@@ -123,6 +135,59 @@ class EventDB:
             events = network.deus_burned_events(last_block)
             self.insert(f'burned_deus_{chain_id}', events)
 
+    @error_handler
+    def staked_deus_liquidity(self):
+        liquidity = sum(self.networks[chain_id].staked_deus_liquidity() for chain_id in self.networks)
+        self.insert(
+            table_name='staked_deus_liquidity',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'liquidity': str(liquidity)
+                }
+            ]
+        )
+    
+    @error_handler
+    def staked_dei_liquidity(self):
+        liquidity = sum(self.networks[chain_id].staked_dei_liquidity() for chain_id in self.networks)
+        self.insert(
+            table_name='staked_dei_liquidity',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'liquidity': str(liquidity)
+                }
+            ]
+        )
+    
+    @error_handler
+    def deus_dex_liquidity(self):
+        liquidity = sum(self.networks[chain_id].deus_dex_liquidity() for chain_id in self.networks)
+        self.insert(
+            table_name='deus_dex_liquidity',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'liquidity': str(liquidity)
+                }
+            ]
+        )
+
+    @error_handler
+    def dei_dex_liquidity(self):
+        liquidity = sum(self.networks[chain_id].dei_dex_liquidity() for chain_id in self.networks)
+        self.insert(
+            table_name='dei_dex_liquidity',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'liquidity': str(liquidity)
+                }
+            ]
+        )
+
+    
     def get_dei_total_supply(self):
         return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
@@ -149,26 +214,21 @@ class EventDB:
 
     def get_deus_marketcap(self):
         total_supply = self.get_deus_total_supply()
-        price = self.networks[250].get_deus_price()
+        price = self.networks[250].get_source_deus_price()
         return total_supply * price * 1e-18
 
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
         return marketcap * 1e-18
     
-    @error_handler
-    def staked_deus_liquidity(self):
-        staked_liquidity = sum(self.networks[chain_id].staked_deus_liquidity() for chain_id in self.networks)
-        self.insert(
-            table_name='staked_deus_liquidity',
-            documents=[
-                {
-                    'timestamp': int(time.time()),
-                    'staked_liquidity': str(staked_liquidity)
-                }
-            ]
-        )
-
-    
     def get_staked_deus_liquidity(self):
-        return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['staked_liquidity']
+        return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
+
+    def get_staked_dei_liquidity(self):
+        return self.db['staked_dei_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
+    
+    def get_deus_dex_liquidity(self):
+        return self.db['deus_dex_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
+
+    def get_dei_dex_liquidity(self):
+        return self.db['dei_dex_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
