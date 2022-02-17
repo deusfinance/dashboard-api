@@ -57,6 +57,12 @@ class NetworkApi:
             marketcap -= self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
         return marketcap
 
+    def deus_circulating_total_supply(self):
+        total_supply = self.deus_total_supply()
+        for address in self.dao_list:
+            total_supply -= self.deus_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
+        return total_supply
+
     def dei_minted_events(self, from_block):
         latest_block = self.w3.eth.block_number
         result = []

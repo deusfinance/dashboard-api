@@ -38,6 +38,10 @@ class EventDB:
         for chain_id, value in CHAINS.items():
             self.networks[chain_id] = NetworkApi(chain_id, [], value[1])
 
+    def insert(self, table_name: str, documents: List[dict]):
+        if documents:
+            self.db[table_name].insert_many(documents)
+
     @error_handler
     def dei_total_supply(self):
         total_supply = sum(self.networks[chain_id].dei_total_supply() for chain_id in self.networks)
@@ -64,30 +68,19 @@ class EventDB:
             ]
         )
 
-    def get_dei_total_supply(self):
-        return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
-
-    def get_dei_circulating_marketcap(self):
-        return self.db['dei_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
-
-    def insert(self, table_name: str, documents: List[dict]):
-        if documents:
-            self.db[table_name].insert_many(documents)
-
-    def get_minted_dei(self, interval):
-        from_time = int(time.time()) - interval
-        result = 0
-        for chain_id, network in self.networks.items():
-            chain_amount = 0
-            for item in self.db[f'minted_dei_{chain_id}'].find(sort=[('timestamp', DESCENDING)]):
-                if item['timestamp'] < from_time:
-                    break
-                chain_amount += int(item['amount'])
-            result += chain_amount
-        return result
-
-    def get_last_week_minted_dei(self):
-        return self.get_minted_dei(7 * 24 * 60 * 60)
+    @error_handler
+    def deus_circulating_marketcap(self):
+        total_supply = sum(self.networks[chain_id].deus_circulating_total_supply() for chain_id in self.networks)
+        price = self.networks[250].get_deus_price()
+        self.insert(
+            table_name='deus_circulating_marketcap',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'marketcap': str(total_supply * price)
+                }
+            ]
+        )
 
     @error_handler
     def dei_minted_events(self):
@@ -129,3 +122,36 @@ class EventDB:
                 last_block = last_item['block']
             events = network.deus_burned_events(last_block)
             self.insert(f'burned_deus_{chain_id}', events)
+
+    def get_dei_total_supply(self):
+        return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
+
+    def get_dei_circulating_marketcap(self):
+        return self.db['dei_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
+
+    def get_minted_dei(self, interval):
+        from_time = int(time.time()) - interval
+        result = 0
+        for chain_id, network in self.networks.items():
+            chain_amount = 0
+            for item in self.db[f'minted_dei_{chain_id}'].find(sort=[('timestamp', DESCENDING)]):
+                if item['timestamp'] < from_time:
+                    break
+                chain_amount += int(item['amount'])
+            result += chain_amount
+        return result
+
+    def get_last_week_minted_dei(self):
+        return self.get_minted_dei(7 * 24 * 60 * 60)
+
+    def get_deus_total_supply(self):
+        return self.db['deus_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
+
+    def get_deus_marketcap(self):
+        total_supply = self.get_deus_total_supply()
+        price = self.networks[250].get_deus_price()
+        return total_supply * price * 1e-18
+
+    def get_deus_circulating_marketcap(self):
+        marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
+        return marketcap * 1e-18
