@@ -23,19 +23,22 @@ class NetworkApi:
         self.deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
 
     def get_source_deus_price(self):
-        return self.get_token_price(DEUS_ADDRESS, pair_addresses=CONFIG[self.source_price_chain]['path_to_usdc'][DEUS_ADDRESS])
+        w3 = Web3(WebsocketProvider(CONFIG[250]['rpc']))
+        return self.get_token_price(DEUS_ADDRESS, pair_addresses=CONFIG[self.source_price_chain]['path_to_usdc'][DEUS_ADDRESS], w3=w3)
 
-    def get_token_price(self, token_address, pair_addresses=None):
+    def get_token_price(self, token_address, pair_addresses=None, w3=None):
         if not pair_addresses:
             pair_addresses = self.path_to_usdc[token_address]
+        if not w3:
+            w3 = self.w3
         price = 1
         base_address = token_address
         for pair_address in pair_addresses:
-            pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+            pair = w3.eth.contract(pair_address, abi=PAIR_ABI)
             token0_address = pair.functions.token0().call()
             token1_address = pair.functions.token1().call()
-            token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
-            token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+            token0 = w3.eth.contract(token0_address, abi=ERC20_ABI)
+            token1 = w3.eth.contract(token1_address, abi=ERC20_ABI)
 
             if token0_address == base_address:
                 base_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
@@ -141,20 +144,22 @@ class NetworkApi:
 
     def staking_lp_balance(self, pair_address, staking_address):
         pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
-        return pair.functions.balanceOf(staking_address)
+        return pair.functions.balanceOf(staking_address).call()
         
     def staked_deus_liquidity(self):
         res = 0
-        for pair_name, pair_address in self.pairs['deus'].items():
+        for token_name, staking_address in self.stakings['deus'].items():
+            pair_address = self.pairs['deus'][token_name]
             lp_price = self.deus_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
-            res += self.staking_lp_balance(pair_address) * lp_price
+            res += self.staking_lp_balance(pair_address, staking_address) * lp_price
         return res
     
     def staked_dei_liquidity(self):
         res = 0
-        for pair_name, pair_address in self.pairs['dei'].items():
+        for token_name, staking_address in self.stakings['dei'].items():
+            pair_address = self.pairs['dei'][token_name]
             lp_price = self.dei_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
-            res += self.staking_lp_balance(pair_address) * lp_price
+            res += self.staking_lp_balance(pair_address, staking_address) * lp_price
         return res
 
     def deus_dex_liquidity(self):
