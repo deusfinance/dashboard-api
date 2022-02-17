@@ -19,7 +19,7 @@ def exception_decorator(func):
 
 @app.route('/deus/total-supply', methods=['GET'])
 @exception_decorator
-def deus_total_supply():
+def get_deus_total_supply():
     return event_db.get_deus_total_supply()
 
 
@@ -58,7 +58,7 @@ def get_minted_dei(interval):
 
 @app.route('/dei/total-supply', methods=['GET'])
 @exception_decorator
-def dei_total_supply():
+def get_dei_total_supply():
     return event_db.get_dei_total_supply()
 
 
@@ -89,7 +89,17 @@ def get_dei_dex_liquidity():
 @exception_decorator
 def get_info():
     return {
-        
+        'deus_total_supply': event_db.get_deus_total_supply(),
+        # 'deus_marketcap': event_db.get_deus_marketcap(),
+        'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
+        'staked_deus_liquidity': event_db.get_staked_deus_liquidity(),
+        'deus_dex_liquidity': event_db.get_deus_dex_liquidity(),
+        'deus_burned_events': event_db.get_deus_burned_events(7*24*60*60),
+        'minted_dei': event_db.get_minted_dei(7*24*60*60),
+        'dei_total_supply': event_db.get_dei_total_supply(),
+        'dei_circulating_marketcap': event_db.get_dei_circulating_marketcap(),
+        'staked_dei_liquidity': event_db.get_staked_dei_liquidity(),
+        'dei_dex_liquidity': event_db.get_dei_dex_liquidity()
     }
 
 

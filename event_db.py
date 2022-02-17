@@ -213,13 +213,13 @@ class EventDB:
         return self.db['deus_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
     def get_deus_marketcap(self):
-        total_supply = self.get_deus_total_supply()
+        total_supply = Decimal(self.get_deus_total_supply())
         price = self.networks[250].get_source_deus_price()
         return total_supply * price * 1e-18
 
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
-        return marketcap * 1e-18
+        return int(marketcap) * 1e-18
     
     def get_staked_deus_liquidity(self):
         return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
