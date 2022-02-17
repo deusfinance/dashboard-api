@@ -52,19 +52,19 @@ class NetworkApi:
         return price
 
     def dei_total_supply(self):
-        return self.dei_contract.functions.totalSupply().call()
+        return int(self.dei_contract.functions.totalSupply().call())
 
     def dei_circulating_marketcap(self):
         marketcap = self.dei_total_supply()
         for address in self.dei_ignore_list:
             marketcap -= self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
-        return marketcap
+        return int(marketcap)
 
     def deus_circulating_total_supply(self):
         total_supply = self.deus_total_supply()
         for address in self.deus_ignore_list:
             total_supply -= self.deus_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
-        return total_supply
+        return int(total_supply)
 
     def dei_minted_events(self, from_block):
         latest_block = self.w3.eth.block_number
@@ -84,7 +84,7 @@ class NetworkApi:
 
    
     def deus_total_supply(self):
-        return self.deus_contract.functions.totalSupply().call()
+        return int(self.deus_contract.functions.totalSupply().call())
 
     def deus_burned_events(self, from_block):
         latest_block = self.w3.eth.block_number
@@ -118,7 +118,7 @@ class NetworkApi:
             deus_reserve = pair.functions.getReserves().call()[1]
             quote_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
             quote_address = token0_address 
-        return deus_reserve * self.get_source_deus_price() + quote_reserve * self.get_token_price(quote_address)
+        return int(deus_reserve * self.get_source_deus_price() + quote_reserve * self.get_token_price(quote_address))
 
     def dei_dex_liquidity_for_pair(self, pair_address):
         pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
@@ -135,16 +135,16 @@ class NetworkApi:
             dei_reserve = pair.functions.getReserves().call()[1]
             quote_reserve = pair.functions.getReserves().call()[0] * 10 ** (18 - token0.functions.decimals().call())
             quote_address = token0_address 
-        return dei_reserve + quote_reserve * self.get_token_price(quote_address)
+        return int(dei_reserve + quote_reserve * self.get_token_price(quote_address))
     
     def lp_total_supply(self, pair_address):
         pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
-        return pair.functions.totalSupply().call()
+        return int(pair.functions.totalSupply().call())
 
 
     def staking_lp_balance(self, pair_address, staking_address):
         pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
-        return pair.functions.balanceOf(staking_address).call()
+        return int(pair.functions.balanceOf(staking_address).call())
         
     def staked_deus_liquidity(self):
         res = 0
@@ -152,7 +152,7 @@ class NetworkApi:
             pair_address = self.pairs['deus'][token_name]
             lp_price = self.deus_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
             res += self.staking_lp_balance(pair_address, staking_address) * lp_price
-        return res
+        return int(res)
     
     def staked_dei_liquidity(self):
         res = 0
@@ -160,16 +160,16 @@ class NetworkApi:
             pair_address = self.pairs['dei'][token_name]
             lp_price = self.dei_dex_liquidity_for_pair(pair_address) / self.lp_total_supply(pair_address)
             res += self.staking_lp_balance(pair_address, staking_address) * lp_price
-        return res
+        return int(res)
 
     def deus_dex_liquidity(self):
         res = 0
         for pair_name, pair_address in self.pairs['deus'].items():
             res += self.deus_dex_liquidity_for_pair(pair_address)
-        return res
+        return int(res)
 
     def dei_dex_liquidity(self):
         res = 0
         for pair_name, pair_address in self.pairs['dei'].items():
             res += self.dei_dex_liquidity_for_pair(pair_address)
-        return res
+        return int(res)

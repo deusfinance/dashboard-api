@@ -61,7 +61,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'total_supply': str(total_supply)
+                    'total_supply': str(int(total_supply))
                 }
             ]
         )
@@ -74,7 +74,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'marketcap': str(marketcap)
+                    'marketcap': str(int(marketcap))
                 }
             ]
         )
@@ -87,7 +87,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'total_supply': str(total_supply)
+                    'total_supply': str(int(total_supply))
                 }
             ]
         )  
@@ -102,7 +102,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'marketcap': str(total_supply * price)
+                    'marketcap': str(int(total_supply * price))
                 }
             ]
         )
@@ -143,7 +143,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'liquidity': str(liquidity)
+                    'liquidity': str(int(liquidity))
                 }
             ]
         )
@@ -156,7 +156,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'liquidity': str(liquidity)
+                    'liquidity': str(int(liquidity))
                 }
             ]
         )
@@ -169,7 +169,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'liquidity': str(liquidity)
+                    'liquidity': str(int(liquidity))
                 }
             ]
         )
@@ -182,7 +182,7 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'liquidity': str(liquidity)
+                    'liquidity': str(int(liquidity))
                 }
             ]
         )
@@ -204,7 +204,7 @@ class EventDB:
                     break
                 chain_amount += int(item['amount'])
             result += chain_amount
-        return result
+        return str(result)
 
     def get_last_week_minted_dei(self):
         return self.get_minted_dei(7 * 24 * 60 * 60)
@@ -213,13 +213,13 @@ class EventDB:
         return self.db['deus_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
     def get_deus_marketcap(self):
-        total_supply = self.get_deus_total_supply()
+        total_supply = int(self.get_deus_total_supply())
         price = self.networks[250].get_source_deus_price()
-        return total_supply * price * 1e-18
+        return str(int(total_supply * price * 1e-18))
 
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
-        return int(marketcap) * 1e-18
+        return str(int(int(marketcap) * 1e-18))
     
     def get_staked_deus_liquidity(self):
         return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
@@ -243,4 +243,4 @@ class EventDB:
                     break
                 chain_amount += int(item['amount'])
             result += chain_amount
-        return result
+        return str(result)

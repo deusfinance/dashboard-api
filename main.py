@@ -90,7 +90,7 @@ def get_dei_dex_liquidity():
 def get_info():
     return {
         'deus_total_supply': event_db.get_deus_total_supply(),
-        # 'deus_marketcap': event_db.get_deus_marketcap(),
+        'deus_marketcap': event_db.get_deus_marketcap(),
         'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
         'staked_deus_liquidity': event_db.get_staked_deus_liquidity(),
         'deus_dex_liquidity': event_db.get_deus_dex_liquidity(),
