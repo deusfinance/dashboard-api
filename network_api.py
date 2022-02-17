@@ -1,7 +1,7 @@
 from web3 import Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
-from config import CHAINS, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, USDC_ADDRESSES, PAIRS, PAIR_ABI
+from config import CHAINS, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, STAKINGS, STAKING_ABI, USDC_ADDRESSES, PAIRS, PAIR_ABI
 
 
 class NetworkApi:
@@ -79,6 +79,7 @@ class NetworkApi:
             })
         return result
 
+   
     def deus_total_supply(self):
         return self.deus_contract.functions.totalSupply().call()
 
@@ -97,3 +98,32 @@ class NetworkApi:
                 'timestamp': self.w3.eth.get_block(ent.blockNumber).timestamp
             })
         return result
+
+    
+    def deus_dex_liquidity(self):
+        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
+        if deus_native.functions.token0().call() == DEUS_ADDRESS:
+            deus_reserve = deus_native.functions.getReserves().call()[0]
+            native_reserve = deus_native.functions.getReserves().call()[1]
+        else:
+            deus_reserve = deus_native.functions.getReserves().call()[1]
+            native_reserve = deus_native.functions.getReserves().call()[0]
+        
+        return deus_reserve * self.get_deus_price() + native_reserve * self.get_native_price()
+
+    
+    def deus_lp_total_supply(self):
+        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
+        return deus_native.functions.totalSupply().call()
+
+
+    def deus_staking_lp_balance(self):
+        deus_native = self.w3.eth.contract(PAIRS[self.chain_id]['deus-native'], abi=PAIR_ABI)
+        return deus_native.functions.balanceOf(STAKINGS[self.chain_id]['deus-native'])
+        
+
+    def staked_deus_liquidity(self):
+        for pair in PAIRS[self.chain_id]['deus']:
+
+            lp_price = self.deus_dex_liquidity() / self.deus_lp_total_supply()
+        return self.deus_staking_lp_balance() * lp_price

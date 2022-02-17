@@ -98,7 +98,7 @@ class EventDB:
 
     @error_handler
     def deus_total_supply(self):
-        total_supply = sum([self.networks[chain_id].deus_total_supply() for chain_id in self.networks])
+        total_supply = sum(self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
         self.insert(
             table_name='deus_total_supply',
             documents=[
@@ -107,8 +107,8 @@ class EventDB:
                     'total_supply': str(total_supply)
                 }
             ]
-        )
-
+        )  
+  
     @error_handler
     def deus_burned_events(self):
         for chain_id, network in self.networks.items():
@@ -155,3 +155,20 @@ class EventDB:
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
         return marketcap * 1e-18
+    
+    @error_handler
+    def staked_deus_liquidity(self):
+        staked_liquidity = sum(self.networks[chain_id].staked_deus_liquidity() for chain_id in self.networks)
+        self.insert(
+            table_name='staked_deus_liquidity',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'staked_liquidity': str(staked_liquidity)
+                }
+            ]
+        )
+
+    
+    def get_staked_deus_liquidity(self):
+        return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['staked_liquidity']
