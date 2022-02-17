@@ -232,3 +232,15 @@ class EventDB:
 
     def get_dei_dex_liquidity(self):
         return self.db['dei_dex_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
+
+    def get_deus_burned_events(self, interval):
+        from_time = int(time.time()) - interval
+        result = 0
+        for chain_id, network in self.networks.items():
+            chain_amount = 0
+            for item in self.db[f'burned_deus_{chain_id}'].find(sort=[('timestamp', DESCENDING)]):
+                if item['timestamp'] < from_time:
+                    break
+                chain_amount += int(item['amount'])
+            result += chain_amount
+        return result

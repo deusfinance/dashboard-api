@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
+from event_db import EventDB
 
 app = Flask(__name__)
+event_db = EventDB('statistics')
 
 
 def exception_decorator(func):
@@ -15,10 +17,82 @@ def exception_decorator(func):
     return wrapper
 
 
-@app.route('/price', methods=['GET'])
+@app.route('/deus/total-supply', methods=['GET'])
 @exception_decorator
-def price():
-    ...
+def deus_total_supply():
+    return event_db.get_deus_total_supply()
+
+
+@app.route('/deus/marketcap', methods=['GET'])
+@exception_decorator
+def get_deus_marketcap():
+    return event_db.get_deus_marketcap()
+
+
+@app.route('/deus/circulating-marketcap', methods=['GET'])
+@exception_decorator
+def get_deus_circulating_marketcap():
+    return event_db.get_deus_circulating_marketcap()
+
+
+@app.route('/deus/staked-liquidity', methods=['GET'])
+@exception_decorator
+def get_staked_deus_liquidity():
+    return event_db.get_staked_deus_liquidity()
+
+
+@app.route('/deus/dex-liquidity', methods=['GET'])
+@exception_decorator
+def get_deus_dex_liquidity():
+    return event_db.get_deus_dex_liquidity()
+
+@app.route('/deus/burned-amount/<interval>', methods=['GET'])
+@exception_decorator
+def get_deus_burned_events(interval):
+    return str(event_db.get_deus_burned_events(int(interval)))
+
+@app.route('/dei/minted-amount/<interval>', methods=['GET'])
+@exception_decorator
+def get_minted_dei(interval):
+    return str(event_db.get_minted_dei(int(interval)))
+
+@app.route('/dei/total-supply', methods=['GET'])
+@exception_decorator
+def dei_total_supply():
+    return event_db.get_dei_total_supply()
+
+
+@app.route('/dei/marketcap', methods=['GET'])
+@exception_decorator
+def get_dei_marketcap():
+    return event_db.get_dei_marketcap()
+
+
+@app.route('/dei/circulating-marketcap', methods=['GET'])
+@exception_decorator
+def get_dei_circulating_marketcap():
+    return event_db.get_dei_circulating_marketcap()
+
+
+@app.route('/dei/staked-liquidity', methods=['GET'])
+@exception_decorator
+def get_staked_dei_liquidity():
+    return event_db.get_staked_dei_liquidity()
+
+
+@app.route('/dei/dex-liquidity', methods=['GET'])
+@exception_decorator
+def get_dei_dex_liquidity():
+    return event_db.get_dei_dex_liquidity()
+
+@app.route('/info', methods=['GET'])
+@exception_decorator
+def get_info():
+    return {
+        
+    }
+
+
 
 
 if __name__ == "__main__":
