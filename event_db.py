@@ -4,7 +4,7 @@ from typing import List
 from config import CONFIG
 from network_api import NetworkApi
 import time
-from pymongo import MongoClient, DESCENDING
+from pymongo import MongoClient, DESCENDING, ASCENDING
 
 from telegram_sender import sender
 
@@ -195,7 +195,8 @@ class EventDB:
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'emissions': str(int(emissions))
+                    'block': self.networks[250].w3.eth.block_number,
+                    'emissions': str(emissions)
                 }
             ]
         )
@@ -228,11 +229,11 @@ class EventDB:
     def get_deus_marketcap(self):
         total_supply = int(self.get_deus_total_supply())
         price = self.networks[250].get_source_deus_price()
-        return str(int(total_supply * price * 1e-18))
+        return str(int(total_supply * price))
 
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
-        return str(int(int(marketcap) * 1e-18))
+        return str(int(int(marketcap)))
     
     def get_staked_deus_liquidity(self):
         return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
@@ -258,5 +259,12 @@ class EventDB:
             result += chain_amount
         return str(result)
 
-    def get_deus_emissions(self):
-        return self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])['emissions']
+    def get_deus_emissions(self, interval):
+        from_time = int(time.time()) - interval
+        current_block = self.networks[250].w3.eth.block_number
+        last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)])
+        if not last_week_record:
+            last_week_record = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
+        previous_block = last_week_record['block']
+        emissions = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])['emissions']
+        return (current_block - previous_block) * float(emissions)
