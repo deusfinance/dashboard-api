@@ -189,14 +189,22 @@ class EventDB:
 
     @error_handler
     def deus_emissions(self):
+        current_block = self.networks[250].w3.eth.block_number
+        last_item = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])
+        if not last_item:
+            last_block = current_block - 1
+        last_block = last_item['block']
+        current_block = self.networks[250].w3.eth.block_number
         emissions = self.networks[250].deus_emissions()
+        emissions_value = emissions * (current_block - last_block)
         self.insert(
             table_name='deus_emissions',
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'block': self.networks[250].w3.eth.block_number,
-                    'emissions': str(emissions)
+                    'block': current_block,
+                    'emissions': str(int(emissions)),
+                    'emissions_value': str(int(emissions_value))
                 }
             ]
         )
@@ -264,7 +272,9 @@ class EventDB:
         current_block = self.networks[250].w3.eth.block_number
         last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)])
         if not last_week_record:
-            last_week_record = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
-        previous_block = last_week_record['block']
-        emissions = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])['emissions']
-        return (current_block - previous_block) * float(emissions)
+            emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find())
+            first_item = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
+            emissions += ((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (current_block - first_item['block']) * int(first_item['emissions'])
+        else:
+            emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)]))
+        return emissions

@@ -198,6 +198,6 @@ class NetworkApi:
             rewarders.add(rewarder)
         for rewarder in rewarders:
             rewarder_contract = self.w3.eth.contract(rewarder, abi=REWARDER_ABI)
-            token_per_block = rewarder_contract.functions.tokenPerBlock().call() / 10 ** 18
+            token_per_block = rewarder_contract.functions.tokenPerBlock().call()
             total_emission += token_per_block
         return total_emission
