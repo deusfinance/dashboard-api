@@ -37,16 +37,16 @@ class EventDB:
         self.networks = dict()
         for chain_id, value in CONFIG.items():
             self.networks[chain_id] = NetworkApi(
-                rpc= value['rpc'], 
-                chain_id= chain_id, 
-                source_price_chain= value['source_price_chain'], 
-                dei_ignore_list= value['dei_ignore_list'], 
-                deus_ignore_list= value['deus_ignore_list'], 
-                usdc_address= value['usdc_address'], 
-                pairs= value['pairs'], 
-                stakings= value['stakings'],
-                path_to_usdc= value['path_to_usdc'],
-                is_poa= value['is_poa'],
+                rpc=value['rpc'],
+                chain_id=chain_id,
+                source_price_chain=value['source_price_chain'],
+                dei_ignore_list=value['dei_ignore_list'],
+                deus_ignore_list=value['deus_ignore_list'],
+                usdc_address=value['usdc_address'],
+                pairs=value['pairs'],
+                stakings=value['stakings'],
+                path_to_usdc=value['path_to_usdc'],
+                is_poa=value['is_poa'],
             )
 
     def insert(self, table_name: str, documents: List[dict]):
@@ -78,7 +78,7 @@ class EventDB:
                 }
             ]
         )
-    
+
     @error_handler
     def deus_total_supply(self):
         total_supply = sum(self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
@@ -90,8 +90,7 @@ class EventDB:
                     'total_supply': str(int(total_supply))
                 }
             ]
-        )  
-  
+        )
 
     @error_handler
     def deus_circulating_marketcap(self):
@@ -147,7 +146,7 @@ class EventDB:
                 }
             ]
         )
-    
+
     @error_handler
     def staked_dei_liquidity(self):
         liquidity = sum(self.networks[chain_id].staked_dei_liquidity() for chain_id in self.networks)
@@ -160,7 +159,7 @@ class EventDB:
                 }
             ]
         )
-    
+
     @error_handler
     def deus_dex_liquidity(self):
         liquidity = sum(self.networks[chain_id].deus_dex_liquidity() for chain_id in self.networks)
@@ -201,7 +200,6 @@ class EventDB:
             ]
         )
 
-    
     def get_dei_total_supply(self):
         return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
@@ -234,13 +232,13 @@ class EventDB:
     def get_deus_circulating_marketcap(self):
         marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
         return str(int(int(marketcap)))
-    
+
     def get_staked_deus_liquidity(self):
         return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
 
     def get_staked_dei_liquidity(self):
         return self.db['staked_dei_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
-    
+
     def get_deus_dex_liquidity(self):
         return self.db['deus_dex_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
 
@@ -262,7 +260,8 @@ class EventDB:
     def get_deus_emissions(self, interval):
         from_time = int(time.time()) - interval
         current_block = self.networks[250].w3.eth.block_number
-        last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)])
+        last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}},
+                                                              sort=[('timestamp', DESCENDING)])
         if not last_week_record:
             last_week_record = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
         previous_block = last_week_record['block']

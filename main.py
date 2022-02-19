@@ -46,24 +46,34 @@ def get_staked_deus_liquidity():
 def get_deus_dex_liquidity():
     return event_db.get_deus_dex_liquidity()
 
+
 @app.route('/deus/emissions', methods=['GET'])
 @exception_decorator
 def get_deus_emissions():
-    return str(event_db.get_deus_emissions(7*24*60*60))
+    return str(event_db.get_deus_emissions(7 * 24 * 60 * 60))
+
 
 @app.route('/deus/burned-amount/<interval>', methods=['GET'])
 @exception_decorator
 def get_deus_burned_events(interval):
     return str(event_db.get_deus_burned_events(int(interval)))
 
+
 @app.route('/dei/minted-amount/<interval>', methods=['GET'])
 @exception_decorator
 def get_minted_dei(interval):
     return str(event_db.get_minted_dei(int(interval)))
 
+
 @app.route('/dei/total-supply', methods=['GET'])
 @exception_decorator
 def get_dei_total_supply():
+    return event_db.get_dei_total_supply()
+
+
+@app.route('/dei/marketcap', methods=['GET'])
+@exception_decorator
+def get_dei_marketcap():
     return event_db.get_dei_total_supply()
 
 
@@ -84,6 +94,7 @@ def get_staked_dei_liquidity():
 def get_dei_dex_liquidity():
     return event_db.get_dei_dex_liquidity()
 
+
 @app.route('/info', methods=['GET'])
 @exception_decorator
 def get_info():
@@ -91,18 +102,16 @@ def get_info():
         'deus_total_supply': event_db.get_deus_total_supply(),
         'deus_marketcap': event_db.get_deus_marketcap(),
         'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
-        'deus_emissions': event_db.get_deus_emissions(7*24*60*60),
+        'deus_emissions': event_db.get_deus_emissions(7 * 24 * 60 * 60),
         'staked_deus_liquidity': event_db.get_staked_deus_liquidity(),
         'deus_dex_liquidity': event_db.get_deus_dex_liquidity(),
-        'deus_burned_events': event_db.get_deus_burned_events(7*24*60*60),
-        'minted_dei': event_db.get_minted_dei(7*24*60*60),
+        'deus_burned_events': event_db.get_deus_burned_events(7 * 24 * 60 * 60),
+        'minted_dei': event_db.get_minted_dei(7 * 24 * 60 * 60),
         'dei_total_supply': event_db.get_dei_total_supply(),
         'dei_circulating_marketcap': event_db.get_dei_circulating_marketcap(),
         'staked_dei_liquidity': event_db.get_staked_dei_liquidity(),
         'dei_dex_liquidity': event_db.get_dei_dex_liquidity()
     }
-
-
 
 
 if __name__ == "__main__":
