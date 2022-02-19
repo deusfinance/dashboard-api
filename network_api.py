@@ -1,7 +1,7 @@
 from web3 import Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
-from config import CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, STAKING_ABI, PAIR_ABI, ERC20_ABI
+from config import CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, PAIR_ABI, ERC20_ABI
 
 
 class NetworkApi:
@@ -173,3 +173,31 @@ class NetworkApi:
         for pair_name, pair_address in self.pairs['dei'].items():
             res += self.dei_dex_liquidity_for_pair(pair_address)
         return int(res)
+
+    def deus_emissions(self):
+        # master_chef_contract = self.w3.eth.contract(CONFIG[self.chain_id]['master_chef'], abi=MASTER_CHEF_ABI)
+        # total_alloc = 0
+        # total_emission = 0
+        # data = []
+        # for pid in [36, 37]:
+        #     rewarder = master_chef_contract.functions.rewarder(pid).call()
+        #     rewarder_contract = self.w3.eth.contract(rewarder, abi=REWARDER_ABI)
+        #     token_per_block = rewarder_contract.functions.rewardPerBlock().call() / 10 ** 18
+        #     alloc_point = rewarder_contract.functions.poolInfo(pid).call()[2]
+        #     total_alloc += alloc_point
+        #     data += [(alloc_point, token_per_block)]
+        
+        # for d in data:
+        #     total_emission += (d[0] / total_alloc) * d[1]
+        # return total_emission
+        master_chef_contract = self.w3.eth.contract(CONFIG[self.chain_id]['master_chef'], abi=MASTER_CHEF_ABI)
+        total_emission = 0
+        rewarders = set()
+        for pid in [36, 37]:
+            rewarder = master_chef_contract.functions.rewarder(pid).call()
+            rewarders.add(rewarder)
+        for rewarder in rewarders:
+            rewarder_contract = self.w3.eth.contract(rewarder, abi=REWARDER_ABI)
+            token_per_block = rewarder_contract.functions.tokenPerBlock().call() / 10 ** 18
+            total_emission += token_per_block
+        return total_emission

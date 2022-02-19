@@ -46,6 +46,11 @@ def get_staked_deus_liquidity():
 def get_deus_dex_liquidity():
     return event_db.get_deus_dex_liquidity()
 
+@app.route('/deus/emissions', methods=['GET'])
+@exception_decorator
+def get_deus_dex_liquidity():
+    return event_db.get_deus_emissions()
+
 @app.route('/deus/burned-amount/<interval>', methods=['GET'])
 @exception_decorator
 def get_deus_burned_events(interval):
@@ -60,12 +65,6 @@ def get_minted_dei(interval):
 @exception_decorator
 def get_dei_total_supply():
     return event_db.get_dei_total_supply()
-
-
-@app.route('/dei/marketcap', methods=['GET'])
-@exception_decorator
-def get_dei_marketcap():
-    return event_db.get_dei_marketcap()
 
 
 @app.route('/dei/circulating-marketcap', methods=['GET'])
@@ -92,6 +91,7 @@ def get_info():
         'deus_total_supply': event_db.get_deus_total_supply(),
         'deus_marketcap': event_db.get_deus_marketcap(),
         'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
+        'deus_emissions': event_db.get_deus_emissions(),
         'staked_deus_liquidity': event_db.get_staked_deus_liquidity(),
         'deus_dex_liquidity': event_db.get_deus_dex_liquidity(),
         'deus_burned_events': event_db.get_deus_burned_events(7*24*60*60),

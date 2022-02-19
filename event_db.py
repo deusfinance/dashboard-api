@@ -187,6 +187,19 @@ class EventDB:
             ]
         )
 
+    @error_handler
+    def deus_emissions(self):
+        emissions = self.networks[250].deus_emissions()
+        self.insert(
+            table_name='deus_emissions',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'emissions': str(int(emissions))
+                }
+            ]
+        )
+
     
     def get_dei_total_supply(self):
         return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
@@ -244,3 +257,6 @@ class EventDB:
                 chain_amount += int(item['amount'])
             result += chain_amount
         return str(result)
+
+    def get_deus_emissions(self):
+        return self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])['emissions']

@@ -5,6 +5,7 @@ from event_db import EventDB
 
 def main():
     db = EventDB('statistics')
+    db.deus_emissions()
     db.deus_dex_liquidity()
     db.staked_deus_liquidity()
     db.deus_total_supply()
