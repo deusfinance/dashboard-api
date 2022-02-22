@@ -193,8 +193,8 @@ class EventDB:
         last_item = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])
         if not last_item:
             last_block = current_block - 1
-        last_block = last_item['block']
-        current_block = self.networks[250].w3.eth.block_number
+        else:
+            last_block = last_item['block']
         emissions = self.networks[250].deus_emissions()
         emissions_value = emissions * (current_block - last_block)
         self.insert(
@@ -274,7 +274,7 @@ class EventDB:
         if not last_week_record:
             emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find())
             first_item = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
-            emissions += ((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (current_block - first_item['block']) * int(first_item['emissions'])
+            emissions += int(((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (current_block - first_item['block']) * int(first_item['emissions']))
         else:
             emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)]))
         return emissions
