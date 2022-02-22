@@ -23,4 +23,4 @@ if __name__ == '__main__':
             exit()
         except Exception as ex:
             print(ex)
-        time.sleep(30)
+        time.sleep(2*60)
