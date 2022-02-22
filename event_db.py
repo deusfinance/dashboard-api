@@ -21,7 +21,8 @@ def error_handler(func):
             print('Error:', ex)
             print(traceback.format_exc(), file=sys.stderr)
             try:
-                sender.send_message(f"Error in Updating statistics db:\n{ex}", ["notification"])
+                pass
+                # sender.send_message(f"Error in Updating statistics db:\n{ex}", ["notification"])
             except:
                 pass
             return
