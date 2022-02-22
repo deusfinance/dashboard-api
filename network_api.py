@@ -1,14 +1,14 @@
 from web3 import Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
-from config import CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, PAIR_ABI, \
+from config import BET_ABI, CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, PAIR_ABI, \
     ERC20_ABI
 
 
 class NetworkApi:
 
     def __init__(self, rpc, chain_id, source_price_chain, dei_ignore_list, deus_ignore_list, usdc_address, pairs,
-                 stakings, path_to_usdc, is_poa=False) -> None:
+                 stakings,bet_address, bet_pool_ids, path_to_usdc, is_poa=False) -> None:
         self.chain_id = chain_id
         self.source_price_chain = source_price_chain
         self.dei_ignore_list = dei_ignore_list.copy()
@@ -19,6 +19,8 @@ class NetworkApi:
         self.path_to_usdc = path_to_usdc
         self.rpc = rpc
         self.w3 = Web3(WebsocketProvider(self.rpc))
+        self.bet_address = bet_address
+        self.bet_pool_ids = bet_pool_ids
         if is_poa:
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
@@ -138,6 +140,24 @@ class NetworkApi:
             quote_address = token0_address
         return int(dei_reserve + quote_reserve * self.get_token_price(quote_address))
 
+    def dei_dex_liquidity_for_pair_bet(self,bet_address, pool_id):
+        bet = self.w3.eth.contract(bet_address, abi=BET_ABI)
+        data = bet.functions.getPoolTokens(pool_id).call()
+        token0_address = data['tokens'][0]
+        token1_address = data['tokens'][1]
+        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+
+        if token0_address == DEI_ADDRESS:
+            dei_reserve = data['balances'][0]
+            quote_reserve = data['balances'][1] * 10 ** (18 - token1.functions.decimals().call())
+            quote_address = token1_address
+        else:
+            dei_reserve = data['balances'][1]
+            quote_reserve = data['balances'][0] * 10 ** (18 - token0.functions.decimals().call())
+            quote_address = token0_address
+        return int(dei_reserve + quote_reserve * self.get_token_price(quote_address))
+
     def lp_total_supply(self, pair_address):
         pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
         return int(pair.functions.totalSupply().call())
@@ -172,6 +192,9 @@ class NetworkApi:
         res = 0
         for pair_name, pair_address in self.pairs['dei'].items():
             res += self.dei_dex_liquidity_for_pair(pair_address)
+        
+        for pair_name, pool_id in self.bet_pool_ids['dei'].items():
+            res += self.dei_dex_liquidity_for_pair_bet(self.bet_address, pool_id)
         return int(res)
 
     def deus_emissions(self):

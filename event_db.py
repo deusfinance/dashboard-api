@@ -47,6 +47,8 @@ class EventDB:
                 pairs=value['pairs'],
                 stakings=value['stakings'],
                 path_to_usdc=value['path_to_usdc'],
+                bet_pool_ids = value['bet_pool_ids'],
+                bet_address= value['bet_address'],
                 is_poa=value['is_poa'],
             )
 
