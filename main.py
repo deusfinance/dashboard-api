@@ -29,7 +29,7 @@ def get_deus_total_supply():
     return event_db.get_deus_total_supply()
 
 
-@app.route('/deus/circulating-total-supply', methods=['GET'])
+@app.route('/deus/circulating-supply', methods=['GET'])
 @exception_decorator
 def get_deus_circulating_supply():
     return event_db.get_deus_circulating_supply()
@@ -83,19 +83,13 @@ def get_dei_total_supply():
     return event_db.get_dei_total_supply()
 
 
-@app.route('/dei/circulating-total-supply', methods=['GET'])
+@app.route('/dei/circulating-supply', methods=['GET'])
 @exception_decorator
 def get_dei_circulating_supply():
     return event_db.get_dei_circulating_marketcap()
 
 
 @app.route('/dei/marketcap', methods=['GET'])
-@exception_decorator
-def get_dei_marketcap():
-    return event_db.get_dei_total_supply()
-
-
-@app.route('/dei/circulating-marketcap', methods=['GET'])
 @exception_decorator
 def get_dei_circulating_marketcap():
     return event_db.get_dei_circulating_marketcap()
@@ -129,7 +123,7 @@ def get_info():
         'minted_dei': event_db.get_minted_dei(7 * 24 * 60 * 60),
         'dei_total_supply': event_db.get_dei_total_supply(),
         'dei_circulating_supply': event_db.get_dei_circulating_marketcap(),
-        'dei_circulating_marketcap': event_db.get_dei_circulating_marketcap(),
+        'dei_marketcap': event_db.get_dei_circulating_marketcap(),
         'staked_dei_liquidity': event_db.get_staked_dei_liquidity(),
         'dei_dex_liquidity': event_db.get_dei_dex_liquidity()
     }
