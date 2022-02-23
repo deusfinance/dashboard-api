@@ -120,8 +120,8 @@ def get_info():
         'deus_price': event_db.get_deus_price(),
         'deus_total_supply': event_db.get_deus_total_supply(),
         'deus_circulating_supply': event_db.get_deus_circulating_supply(),
-        'deus_marketcap': event_db.get_deus_marketcap(),
-        'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
+        'deus_marketcap': event_db.get_deus_circulating_marketcap(),
+        'deus_fully_diluted_valuation': event_db.get_deus_marketcap(),
         'deus_emissions': event_db.get_deus_emissions(7 * 24 * 60 * 60),
         'staked_deus_liquidity': event_db.get_staked_deus_liquidity(),
         'deus_dex_liquidity': event_db.get_deus_dex_liquidity(),
@@ -136,4 +136,4 @@ def get_info():
 
 
 if __name__ == "__main__":
-    app.run(port=4040, host='0.0.0.0', debug=True)
+    app.run(port=4050, host='0.0.0.0', debug=True)
