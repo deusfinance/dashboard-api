@@ -313,4 +313,4 @@ class EventDB:
             emissions += int(((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (current_block - first_item['block']) * int(first_item['emissions']))
         else:
             emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)]))
-        return emissions
+        return str(emissions)
