@@ -9,6 +9,7 @@ def main():
     db.deus_dex_liquidity()
     db.staked_deus_liquidity()
     db.deus_total_supply()
+    db.deus_circulating_total_supply()
     db.deus_circulating_marketcap()
     db.deus_burned_events()
 
