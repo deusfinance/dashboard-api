@@ -57,6 +57,19 @@ class EventDB:
             self.db[table_name].insert_many(documents)
 
     @error_handler
+    def deus_price(self):
+        price = self.networks[250].get_source_deus_price()
+        self.insert(
+            table_name='deus_price',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'price': str(price)
+                }
+            ]
+        )
+
+    @error_handler
     def dei_total_supply(self):
         total_supply = sum(self.networks[chain_id].dei_total_supply() for chain_id in self.networks)
         self.insert(
@@ -96,21 +109,21 @@ class EventDB:
         )
 
     @error_handler
-    def deus_circulating_total_supply(self):
-        total_supply = sum(self.networks[chain_id].deus_circulating_total_supply() for chain_id in self.networks)
+    def deus_circulating_supply(self):
+        total_supply = sum(self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
         self.insert(
-            table_name='deus_circulating_total_supply',
+            table_name='deus_circulating_supply',
             documents=[
                 {
                     'timestamp': int(time.time()),
-                    'circulating_total_supply': str(int(total_supply))
+                    'circulating_supply': str(int(total_supply))
                 }
             ]
         )
     
     @error_handler
     def deus_circulating_marketcap(self):
-        total_supply = sum(self.networks[chain_id].deus_circulating_total_supply() for chain_id in self.networks)
+        total_supply = sum(self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
         price = self.networks[250].get_source_deus_price()
         self.insert(
             table_name='deus_circulating_marketcap',
@@ -224,6 +237,9 @@ class EventDB:
             ]
         )
 
+    def get_deus_price(self):
+        return self.db['deus_price'].find_one(sort=[('timestamp', DESCENDING)])['price']
+    
     def get_dei_total_supply(self):
         return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
@@ -248,8 +264,8 @@ class EventDB:
     def get_deus_total_supply(self):
         return self.db['deus_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
-    def get_deus_circulating_total_supply(self):
-        marketcap = self.db['deus_circulating_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['circulating_total_supply']
+    def get_deus_circulating_supply(self):
+        marketcap = self.db['deus_circulating_supply'].find_one(sort=[('timestamp', DESCENDING)])['circulating_supply']
         return str(int(int(marketcap)))
 
     def get_deus_marketcap(self):

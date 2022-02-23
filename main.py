@@ -17,6 +17,12 @@ def exception_decorator(func):
     return wrapper
 
 
+@app.route('/deus/price', methods=['GET'])
+@exception_decorator
+def get_deus_price():
+    return event_db.get_deus_price()
+
+
 @app.route('/deus/total-supply', methods=['GET'])
 @exception_decorator
 def get_deus_total_supply():
@@ -25,8 +31,8 @@ def get_deus_total_supply():
 
 @app.route('/deus/circulating-total-supply', methods=['GET'])
 @exception_decorator
-def get_deus_circulating_total_supply():
-    return event_db.get_deus_circulating_total_supply()
+def get_deus_circulating_supply():
+    return event_db.get_deus_circulating_supply()
 
 
 @app.route('/deus/marketcap', methods=['GET'])
@@ -79,7 +85,7 @@ def get_dei_total_supply():
 
 @app.route('/dei/circulating-total-supply', methods=['GET'])
 @exception_decorator
-def get_dei_circulating_total_supply():
+def get_dei_circulating_supply():
     return event_db.get_dei_circulating_marketcap()
 
 
@@ -111,8 +117,9 @@ def get_dei_dex_liquidity():
 @exception_decorator
 def get_info():
     return {
+        'deus_price': event_db.get_deus_price(),
         'deus_total_supply': event_db.get_deus_total_supply(),
-        'deus_circulating_total_supply': event_db.get_deus_circulating_total_supply(),
+        'deus_circulating_supply': event_db.get_deus_circulating_supply(),
         'deus_marketcap': event_db.get_deus_marketcap(),
         'deus_circulating_marketcap': event_db.get_deus_circulating_marketcap(),
         'deus_emissions': event_db.get_deus_emissions(7 * 24 * 60 * 60),
@@ -121,7 +128,7 @@ def get_info():
         'deus_burned_events': event_db.get_deus_burned_events(7 * 24 * 60 * 60),
         'minted_dei': event_db.get_minted_dei(7 * 24 * 60 * 60),
         'dei_total_supply': event_db.get_dei_total_supply(),
-        'dei_circulating_total_supply': event_db.get_dei_circulating_marketcap(),
+        'dei_circulating_supply': event_db.get_dei_circulating_marketcap(),
         'dei_circulating_marketcap': event_db.get_dei_circulating_marketcap(),
         'staked_dei_liquidity': event_db.get_staked_dei_liquidity(),
         'dei_dex_liquidity': event_db.get_dei_dex_liquidity()

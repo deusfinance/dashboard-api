@@ -65,7 +65,7 @@ class NetworkApi:
             marketcap -= self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
         return int(marketcap)
 
-    def deus_circulating_total_supply(self):
+    def deus_circulating_supply(self):
         total_supply = self.deus_total_supply()
         for address in self.deus_ignore_list:
             total_supply -= self.deus_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
