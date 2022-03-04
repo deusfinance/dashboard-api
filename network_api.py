@@ -1,4 +1,4 @@
-from web3 import Web3, WebsocketProvider
+from web3 import HTTPProvider, Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
 from config import BET_ABI, CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, \
@@ -7,7 +7,7 @@ from config import BET_ABI, CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI
 
 class NetworkApi:
 
-    def __init__(self, rpc, chain_id, source_price_chain, dei_ignore_list, deus_ignore_list, usdc_address, pairs,
+    def __init__(self, rpc, rpc_http, chain_id, source_price_chain, dei_ignore_list, deus_ignore_list, usdc_address, pairs,
                  stakings, bet_address, bet_pool_ids, path_to_usdc, is_poa=False) -> None:
         self.chain_id = chain_id
         self.source_price_chain = source_price_chain
@@ -19,15 +19,21 @@ class NetworkApi:
         self.path_to_usdc = path_to_usdc
         self.rpc = rpc
         self.w3 = Web3(WebsocketProvider(self.rpc))
+        self.rpc_http = rpc_http
+        self.http_w3 = Web3(HTTPProvider(self.rpc_http))
         self.bet_address = bet_address
         self.bet_pool_ids = bet_pool_ids
         if is_poa:
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        self.dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
-        self.deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
+            self.http_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        self.dei_contract = self.http_w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
+        self.deus_contract = self.http_w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
+
+        self.socket_dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
+        self.socket_deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
 
     def get_source_deus_price(self):
-        w3 = Web3(WebsocketProvider(CONFIG[250]['rpc']))
+        w3 = Web3(HTTPProvider(CONFIG[250]['rpc_http']))
         return self.get_token_price(DEUS_ADDRESS,
                                     pair_addresses=CONFIG[self.source_price_chain]['path_to_usdc'][DEUS_ADDRESS], w3=w3)
 
@@ -35,7 +41,7 @@ class NetworkApi:
         if not pair_addresses:
             pair_addresses = self.path_to_usdc[token_address]
         if not w3:
-            w3 = self.w3
+            w3 = self.http_w3
         price = 1
         base_address = token_address
         for pair_address in pair_addresses:
@@ -77,7 +83,7 @@ class NetworkApi:
         entities = []
         size = 10000
         for i in range(from_block, latest_block + 1, size):
-            entities.extend(self.dei_contract.events.DEIMinted.createFilter(fromBlock=i,
+            entities.extend(self.socket_dei_contract.events.DEIMinted.createFilter(fromBlock=i,
                                                                             toBlock=i + size).get_all_entries())
         for ent in entities:
             result.append({
@@ -96,7 +102,7 @@ class NetworkApi:
         entities = []
         size = 10000
         for i in range(from_block, latest_block + 1, size):
-            entities.extend(self.deus_contract.events.DEUSBurned.createFilter(fromBlock=i,
+            entities.extend(self.socket_deus_contract.events.DEUSBurned.createFilter(fromBlock=i,
                                                                               toBlock=i + size).get_all_entries())
         for ent in entities:
             result.append({
@@ -107,11 +113,11 @@ class NetworkApi:
         return result
 
     def deus_dex_liquidity_for_pair(self, pair_address):
-        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         token0_address = pair.functions.token0().call()
         token1_address = pair.functions.token1().call()
-        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
-        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+        token0 = self.http_w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.http_w3.eth.contract(token1_address, abi=ERC20_ABI)
 
         if token0_address == DEUS_ADDRESS:
             deus_reserve = pair.functions.getReserves().call()[0]
@@ -124,11 +130,11 @@ class NetworkApi:
         return int(deus_reserve * self.get_source_deus_price() + quote_reserve * self.get_token_price(quote_address))
 
     def dei_dex_liquidity_for_pair(self, pair_address):
-        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         token0_address = pair.functions.token0().call()
         token1_address = pair.functions.token1().call()
-        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
-        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+        token0 = self.http_w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.http_w3.eth.contract(token1_address, abi=ERC20_ABI)
 
         if token0_address == DEI_ADDRESS:
             dei_reserve = pair.functions.getReserves().call()[0]
@@ -141,12 +147,12 @@ class NetworkApi:
         return int(dei_reserve + quote_reserve * self.get_token_price(quote_address))
 
     def dei_dex_liquidity_for_pair_bet(self, bet_address, pool_id):
-        bet = self.w3.eth.contract(bet_address, abi=BET_ABI)
+        bet = self.http_w3.eth.contract(bet_address, abi=BET_ABI)
         data = bet.functions.getPoolTokens(pool_id).call()
         token0_address = data[0][0]
         token1_address = data[0][1]
-        token0 = self.w3.eth.contract(token0_address, abi=ERC20_ABI)
-        token1 = self.w3.eth.contract(token1_address, abi=ERC20_ABI)
+        token0 = self.http_w3.eth.contract(token0_address, abi=ERC20_ABI)
+        token1 = self.http_w3.eth.contract(token1_address, abi=ERC20_ABI)
 
         if token0_address == DEI_ADDRESS:
             dei_reserve = data[1][0]
@@ -159,11 +165,11 @@ class NetworkApi:
         return int(dei_reserve + quote_reserve * self.get_token_price(quote_address))
 
     def lp_total_supply(self, pair_address):
-        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         return int(pair.functions.totalSupply().call())
 
     def staking_lp_balance(self, pair_address, staking_address):
-        pair = self.w3.eth.contract(pair_address, abi=PAIR_ABI)
+        pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         return int(pair.functions.balanceOf(staking_address).call())
 
     def staked_deus_liquidity(self):
@@ -214,14 +220,14 @@ class NetworkApi:
         # for d in data:
         #     total_emission += (d[0] / total_alloc) * d[1]
         # return total_emission
-        master_chef_contract = self.w3.eth.contract(CONFIG[self.chain_id]['master_chef'], abi=MASTER_CHEF_ABI)
+        master_chef_contract = self.http_w3.eth.contract(CONFIG[self.chain_id]['master_chef'], abi=MASTER_CHEF_ABI)
         total_emission = 0
         rewarders = set()
         for pid in [36, 37]:
             rewarder = master_chef_contract.functions.rewarder(pid).call()
             rewarders.add(rewarder)
         for rewarder in rewarders:
-            rewarder_contract = self.w3.eth.contract(rewarder, abi=REWARDER_ABI)
+            rewarder_contract = self.http_w3.eth.contract(rewarder, abi=REWARDER_ABI)
             token_per_block = rewarder_contract.functions.tokenPerBlock().call()
             total_emission += token_per_block
         return total_emission

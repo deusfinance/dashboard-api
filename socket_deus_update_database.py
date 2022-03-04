@@ -5,10 +5,7 @@ from event_db import EventDB
 
 def main():
     db = EventDB('statistics')
-    db.dei_dex_liquidity()
-    db.staked_dei_liquidity()
-    db.dei_total_supply()
-    db.dei_circulating_marketcap()
+    db.deus_burned_events()
 
 
 if __name__ == '__main__':
@@ -21,4 +18,4 @@ if __name__ == '__main__':
             exit()
         except Exception as ex:
             print(ex)
-        time.sleep(1*60)
+        time.sleep(2*60)

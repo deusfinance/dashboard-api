@@ -39,6 +39,7 @@ class EventDB:
         for chain_id, value in CONFIG.items():
             self.networks[chain_id] = NetworkApi(
                 rpc=value['rpc'],
+                rpc_http= value['rpc_http'],
                 chain_id=chain_id,
                 source_price_chain=value['source_price_chain'],
                 dei_ignore_list=value['dei_ignore_list'],
@@ -217,7 +218,7 @@ class EventDB:
 
     @error_handler
     def deus_emissions(self):
-        current_block = self.networks[250].w3.eth.block_number
+        current_block = self.networks[250].http_w3.eth.block_number
         last_item = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])
         if not last_item:
             last_block = current_block - 1

@@ -12,7 +12,6 @@ def main():
     db.deus_total_supply()
     db.deus_circulating_supply()
     db.deus_circulating_marketcap()
-    db.deus_burned_events()
 
 
 if __name__ == '__main__':
@@ -25,4 +24,4 @@ if __name__ == '__main__':
             exit()
         except Exception as ex:
             print(ex)
-        time.sleep(2*60)
+        time.sleep(1*60)
