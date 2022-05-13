@@ -39,7 +39,7 @@ class EventDB:
         for chain_id, value in CONFIG.items():
             self.networks[chain_id] = NetworkApi(
                 rpc=value['rpc'],
-                rpc_http= value['rpc_http'],
+                rpc_http=value['rpc_http'],
                 chain_id=chain_id,
                 source_price_chain=value['source_price_chain'],
                 dei_ignore_list=value['dei_ignore_list'],
@@ -48,8 +48,8 @@ class EventDB:
                 pairs=value['pairs'],
                 stakings=value['stakings'],
                 path_to_usdc=value['path_to_usdc'],
-                bet_pool_ids = value['bet_pool_ids'],
-                bet_address= value['bet_address'],
+                bet_pool_ids=value['bet_pool_ids'],
+                bet_address=value['bet_address'],
                 is_poa=value['is_poa'],
             )
 
@@ -72,7 +72,8 @@ class EventDB:
 
     @error_handler
     def dei_total_supply(self):
-        total_supply = sum(self.networks[chain_id].dei_total_supply() for chain_id in self.networks)
+        total_supply = sum(
+            self.networks[chain_id].dei_total_supply() for chain_id in self.networks)
         self.insert(
             table_name='dei_total_supply',
             documents=[
@@ -82,10 +83,14 @@ class EventDB:
                 }
             ]
         )
-  
+
     @error_handler
     def dei_circulating_marketcap(self):
-        marketcap = sum(self.networks[chain_id].dei_circulating_marketcap() for chain_id in self.networks)
+        print("circ supply")
+        print([self.networks[chain_id].dei_circulating_marketcap()
+              for chain_id in self.networks])
+        marketcap = sum([self.networks[chain_id].dei_circulating_marketcap()
+                        for chain_id in self.networks])
         self.insert(
             table_name='dei_circulating_marketcap',
             documents=[
@@ -98,7 +103,8 @@ class EventDB:
 
     @error_handler
     def deus_total_supply(self):
-        total_supply = sum(self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
+        total_supply = sum(
+            self.networks[chain_id].deus_total_supply() for chain_id in self.networks)
         self.insert(
             table_name='deus_total_supply',
             documents=[
@@ -111,7 +117,8 @@ class EventDB:
 
     @error_handler
     def deus_circulating_supply(self):
-        total_supply = sum(self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
+        total_supply = sum(
+            self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
         self.insert(
             table_name='deus_circulating_supply',
             documents=[
@@ -121,10 +128,11 @@ class EventDB:
                 }
             ]
         )
-    
+
     @error_handler
     def deus_circulating_marketcap(self):
-        total_supply = sum(self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
+        total_supply = sum(
+            self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
         price = self.networks[250].get_source_deus_price()
         self.insert(
             table_name='deus_circulating_marketcap',
@@ -139,7 +147,8 @@ class EventDB:
     @error_handler
     def dei_minted_events(self):
         for chain_id, network in self.networks.items():
-            last_item = self.db[f'minted_dei_{chain_id}'].find_one(sort=[('block', DESCENDING)])
+            last_item = self.db[f'minted_dei_{chain_id}'].find_one(
+                sort=[('block', DESCENDING)])
             if not last_item:
                 last_week = int(time.time()) - 7 * 24 * 60 * 60
                 last_block = network.w3.eth.block_number
@@ -153,7 +162,8 @@ class EventDB:
     @error_handler
     def deus_burned_events(self):
         for chain_id, network in self.networks.items():
-            last_item = self.db[f'burned_deus_{chain_id}'].find_one(sort=[('block', DESCENDING)])
+            last_item = self.db[f'burned_deus_{chain_id}'].find_one(
+                sort=[('block', DESCENDING)])
             if not last_item:
                 last_week = int(time.time()) - 7 * 24 * 60 * 60
                 last_block = network.w3.eth.block_number
@@ -166,7 +176,8 @@ class EventDB:
 
     @error_handler
     def staked_deus_liquidity(self):
-        liquidity = sum(self.networks[chain_id].staked_deus_liquidity() for chain_id in self.networks)
+        liquidity = sum(
+            self.networks[chain_id].staked_deus_liquidity() for chain_id in self.networks)
         self.insert(
             table_name='staked_deus_liquidity',
             documents=[
@@ -179,7 +190,8 @@ class EventDB:
 
     @error_handler
     def staked_dei_liquidity(self):
-        liquidity = sum(self.networks[chain_id].staked_dei_liquidity() for chain_id in self.networks)
+        liquidity = sum(
+            self.networks[chain_id].staked_dei_liquidity() for chain_id in self.networks)
         self.insert(
             table_name='staked_dei_liquidity',
             documents=[
@@ -192,7 +204,8 @@ class EventDB:
 
     @error_handler
     def deus_dex_liquidity(self):
-        liquidity = sum(self.networks[chain_id].deus_dex_liquidity() for chain_id in self.networks)
+        liquidity = sum(self.networks[chain_id].deus_dex_liquidity()
+                        for chain_id in self.networks)
         self.insert(
             table_name='deus_dex_liquidity',
             documents=[
@@ -205,7 +218,8 @@ class EventDB:
 
     @error_handler
     def dei_dex_liquidity(self):
-        liquidity = sum(self.networks[chain_id].dei_dex_liquidity() for chain_id in self.networks)
+        liquidity = sum(self.networks[chain_id].dei_dex_liquidity()
+                        for chain_id in self.networks)
         self.insert(
             table_name='dei_dex_liquidity',
             documents=[
@@ -219,7 +233,8 @@ class EventDB:
     @error_handler
     def deus_emissions(self):
         current_block = self.networks[250].http_w3.eth.block_number
-        last_item = self.db['deus_emissions'].find_one(sort=[('timestamp', DESCENDING)])
+        last_item = self.db['deus_emissions'].find_one(
+            sort=[('timestamp', DESCENDING)])
         if not last_item:
             last_block = current_block - 1
         else:
@@ -240,7 +255,7 @@ class EventDB:
 
     def get_deus_price(self):
         return self.db['deus_price'].find_one(sort=[('timestamp', DESCENDING)])['price']
-    
+
     def get_dei_total_supply(self):
         return self.db['dei_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
@@ -266,7 +281,8 @@ class EventDB:
         return self.db['deus_total_supply'].find_one(sort=[('timestamp', DESCENDING)])['total_supply']
 
     def get_deus_circulating_supply(self):
-        marketcap = self.db['deus_circulating_supply'].find_one(sort=[('timestamp', DESCENDING)])['circulating_supply']
+        marketcap = self.db['deus_circulating_supply'].find_one(
+            sort=[('timestamp', DESCENDING)])['circulating_supply']
         return str(int(int(marketcap)))
 
     def get_deus_marketcap(self):
@@ -275,9 +291,9 @@ class EventDB:
         return str(int(total_supply * price))
 
     def get_deus_circulating_marketcap(self):
-        marketcap = self.db['deus_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
+        marketcap = self.db['deus_circulating_marketcap'].find_one(
+            sort=[('timestamp', DESCENDING)])['marketcap']
         return str(int(int(marketcap)))
-
 
     def get_staked_deus_liquidity(self):
         return self.db['staked_deus_liquidity'].find_one(sort=[('timestamp', DESCENDING)])['liquidity']
@@ -309,9 +325,13 @@ class EventDB:
         last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}},
                                                               sort=[('timestamp', DESCENDING)])
         if not last_week_record:
-            emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find())
-            first_item = self.db['deus_emissions'].find_one(sort=[('timestamp', ASCENDING)])
-            emissions += int(((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (current_block - first_item['block']) * int(first_item['emissions']))
+            emissions = sum(int(r['emissions_value'])
+                            for r in self.db['deus_emissions'].find())
+            first_item = self.db['deus_emissions'].find_one(
+                sort=[('timestamp', ASCENDING)])
+            emissions += int(((first_item['timestamp'] - from_time) / (int(time.time()) - first_item['timestamp'])) * (
+                current_block - first_item['block']) * int(first_item['emissions']))
         else:
-            emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find({'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)]))
+            emissions = sum(int(r['emissions_value']) for r in self.db['deus_emissions'].find(
+                {'timestamp': {'$lte': from_time}}, sort=[('timestamp', DESCENDING)]))
         return str(emissions)
