@@ -88,6 +88,10 @@ def get_dei_total_supply():
 def get_dei_circulating_supply():
     return event_db.get_dei_circulating_marketcap()
 
+@app.route('/dei/redeem-lower-bound', methods=['GET'])
+@exception_decorator
+def get_dei_redeem_lower_bound():
+    return event_db.get_dei_redeem_lower_bound()
 
 @app.route('/dei/marketcap', methods=['GET'])
 @exception_decorator
@@ -125,7 +129,9 @@ def get_info():
         'dei_circulating_supply': event_db.get_dei_circulating_marketcap(),
         'dei_marketcap': event_db.get_dei_circulating_marketcap(),
         'staked_dei_liquidity': event_db.get_staked_dei_liquidity(),
-        'dei_dex_liquidity': event_db.get_dei_dex_liquidity()
+        'dei_dex_liquidity': event_db.get_dei_dex_liquidity(),
+        'dei_redeem_lower_bound': event_db.get_dei_redeem_lower_bound(),
+        'dei_circulating_supply': event_db.get_dei_circulating_supply()
     }
 
 

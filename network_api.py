@@ -1,8 +1,8 @@
 from web3 import HTTPProvider, Web3, WebsocketProvider
 from web3.middleware import geth_poa_middleware
 
-from config import BET_ABI, CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, \
-    PAIR_ABI, ERC20_ABI
+from config import BET_ABI, CONFIG, DEI_ABI, DEI_ADDRESS, DEUS_ADDRESS,DEI_USDC_LENDING_ADDRESS, DEUS_DEI_LENDING_ADDRESS, DEUS_ABI, MASTER_CHEF_ABI, REWARDER_ABI, \
+    PAIR_ABI, ERC20_ABI, DEI_USDC_LENDING_ABI, DEUS_DEI_LENDING_ABI
 
 
 class NetworkApi:
@@ -28,7 +28,8 @@ class NetworkApi:
             self.http_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.dei_contract = self.http_w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
         self.deus_contract = self.http_w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
-
+        self.dei_usdc_lending_contract = self.http_w3.eth.contract(DEI_USDC_LENDING_ADDRESS, abi=DEI_USDC_LENDING_ABI)
+        self.deus_dei_lending_contract = self.http_w3.eth.contract(DEUS_DEI_LENDING_ADDRESS, abi=DEUS_DEI_LENDING_ABI)
         self.socket_dei_contract = self.w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
         self.socket_deus_contract = self.w3.eth.contract(DEUS_ADDRESS, abi=DEUS_ABI)
 
@@ -64,6 +65,16 @@ class NetworkApi:
 
     def dei_total_supply(self):
         return int(self.dei_contract.functions.totalSupply().call())
+
+    def lending_total_borrow(self):
+        if self.chain_id == 250:
+            (elastic_dei_usdc, base_dei_usdc)= self.dei_usdc_lending_contract.functions.totalBorrow().call()
+            (elastic_deus_dei, base_deus_dei)= self.deus_dei_lending_contract.functions.totalBorrow().call()
+            return int(elastic_dei_usdc) + int(elastic_deus_dei)
+        return 0
+
+    def balance_of(self, address):
+            return self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
 
     def dei_circulating_marketcap(self):
         marketcap = self.dei_total_supply()

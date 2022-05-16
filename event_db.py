@@ -1,7 +1,7 @@
 import sys
 import traceback
 from typing import List
-from config import CONFIG
+from config import CONFIG, SC_DEI_ADDRESS, DAO_WALLETS_ADDRESS
 from network_api import NetworkApi
 import time
 from pymongo import MongoClient, DESCENDING, ASCENDING
@@ -97,6 +97,41 @@ class EventDB:
                 {
                     'timestamp': int(time.time()),
                     'marketcap': str(int(marketcap))
+                }
+            ]
+        )
+
+    @error_handler
+    def dei_circulating_supply(self):
+        total_supply = sum([self.networks[chain_id].dei_total_supply()
+                        for chain_id in self.networks])
+        over_collateralized_dei = sum([self.networks[chain_id].lending_total_borrow()
+                        for chain_id in self.networks])
+        sc_dei_balance = self.networks[250].balance_of(SC_DEI_ADDRESS)
+        dao_wallet_balance = 0
+        for dao_wallet in DAO_WALLETS_ADDRESS:
+            dao_wallet_balance += sum([self.networks[chain_id].balance_of(dao_wallet)
+                        for chain_id in self.networks])
+        total_circulating_supply = total_supply - over_collateralized_dei - sc_dei_balance - dao_wallet_balance
+        self.insert(
+            table_name='dei_circulating_supply',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'circulating_supply': str(int(total_circulating_supply))
+                }
+            ]
+        )
+
+    @error_handler
+    def dei_redeem_lower_bound(self):
+        lower_bound = 0.341
+        self.insert(
+            table_name='dei_redeem_lower_bound',
+            documents=[
+                {
+                    'timestamp': int(time.time()),
+                    'lower_bound': str(float(lower_bound))
                 }
             ]
         )
@@ -261,6 +296,12 @@ class EventDB:
 
     def get_dei_circulating_marketcap(self):
         return self.db['dei_circulating_marketcap'].find_one(sort=[('timestamp', DESCENDING)])['marketcap']
+
+    def get_dei_circulating_supply(self):
+        return self.db['dei_circulating_supply'].find_one(sort=[('timestamp', DESCENDING)])['circulating_supply']
+
+    def get_dei_redeem_lower_bound(self):
+        return self.db['dei_redeem_lower_bound'].find_one(sort=[('timestamp', DESCENDING)])['lower_bound']
 
     def get_minted_dei(self, interval):
         from_time = int(time.time()) - interval
