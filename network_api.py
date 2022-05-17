@@ -78,8 +78,6 @@ class NetworkApi:
 
     def dei_circulating_marketcap(self):
         marketcap = self.dei_total_supply()
-        if self.chain_id == 250:
-            marketcap -= 15 * 10 ** 6 * 10 ** 18
         for address in self.dei_ignore_list:
             marketcap -= self.dei_contract.functions.balanceOf(Web3.toChecksumAddress(address)).call()
         return int(marketcap)
