@@ -9,8 +9,8 @@ def main():
     db.staked_dei_liquidity()
     db.dei_total_supply()
     db.dei_circulating_marketcap()
-    db.get_dei_redeem_lower_bound()
-    db.get_dei_circulating_supply()
+    db.dei_redeem_lower_bound()
+    db.dei_circulating_supply()
 
 
 if __name__ == '__main__':
