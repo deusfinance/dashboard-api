@@ -135,4 +135,4 @@ def get_info():
 
 
 if __name__ == "__main__":
-    app.run(port=4050, host='0.0.0.0', debug=True)
+    app.run(port=3010, host='0.0.0.0', debug=True)
