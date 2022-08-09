@@ -61,7 +61,7 @@ class EventDB:
 
     @error_handler
     def deus_price(self):
-        price = self.networks[250].get_source_deus_price()
+        price = self.networks[250].get_deus_price()
         self.insert(
             table_name='deus_price',
             documents=[
@@ -170,7 +170,7 @@ class EventDB:
     def deus_circulating_marketcap(self):
         total_supply = sum(
             self.networks[chain_id].deus_circulating_supply() for chain_id in self.networks)
-        price = self.networks[250].get_source_deus_price()
+        price = self.networks[250].get_deus_price()
         self.insert(
             table_name='deus_circulating_marketcap',
             documents=[
@@ -330,7 +330,7 @@ class EventDB:
 
     def get_deus_marketcap(self):
         total_supply = int(self.get_deus_total_supply())
-        price = self.networks[250].get_source_deus_price()
+        price = self.networks[250].get_deus_price()
         return str(int(total_supply * price))
 
     def get_deus_circulating_marketcap(self):

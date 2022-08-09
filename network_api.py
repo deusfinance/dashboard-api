@@ -54,6 +54,9 @@ class NetworkApi:
             w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         return w3
 
+    def get_deus_price(self):
+        return self.get_token_price(self.token_addresses['deus'])
+
     def get_token_price(self, token_address):
         pair_addresses = self.path_to_usdc[token_address]
         w3 = self.w3_http
