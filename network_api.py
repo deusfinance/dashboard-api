@@ -21,19 +21,20 @@ class NetworkApi:
         self.uni_deus_pairs = uni_deus_pairs
         self.path_to_usdc = path_to_usdc
         self.rpc_socket = rpc_socket
+        self.rpc_http = rpc_http
         self.w3_socket = Web3(WebsocketProvider(self.rpc_socket))
+        self.http_w3 = Web3(HTTPProvider(self.rpc_http))
         self.is_poa = is_poa
         if is_poa:
-            self.w3_socket.middleware_onion.inject(geth_poa_middleware, layer=0)
-        self.rpc_http = rpc_http
+            self.w3_socket.middleware_onion.inject(
+                geth_poa_middleware, layer=0)
+            self.http_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.token_addresses = token_addresses
-        
+
         self.stakings = stakings
         self.bet_address = bet_address
         self.bet_pool_ids = bet_pool_ids
-        
-        
-        
+
         self.dei_contract = self.http_w3.eth.contract(DEI_ADDRESS, abi=DEI_ABI)
         self.deus_contract = self.http_w3.eth.contract(
             DEUS_ADDRESS, abi=DEUS_ABI)
@@ -65,13 +66,13 @@ class NetworkApi:
             token1_address = self.token_addresses[pair[2]]
             calls = []
             calls.append(
-                    Call(
-                        w3,
-                        pair[0],
-                        ["getReserves()(uint112,uint112,uint32)"],
-                        [[0, None]]
-                    )
+                Call(
+                    w3,
+                    pair[0],
+                    ["getReserves()(uint112,uint112,uint32)"],
+                    [[0, None]]
                 )
+            )
             calls.append(
                 Call(
                     w3,
@@ -99,10 +100,12 @@ class NetworkApi:
             token_data = Multicall(w3, calls)()
             if token0_address == base_address:
                 base_reserve = token_data[0][0] * 10 ** (18 - token_data[1][0])
-                quote_reserve = token_data[2][0] * 10 ** (18 - token_data[3][0])
+                quote_reserve = token_data[2][0] * \
+                    10 ** (18 - token_data[3][0])
                 base_address = token1_address
             else:
-                quote_reserve = token_data[0][0] * 10 ** (18 - token_data[1][0])
+                quote_reserve = token_data[0][0] * \
+                    10 ** (18 - token_data[1][0])
                 base_reserve = token_data[2][0] * 10 ** (18 - token_data[3][0])
                 base_address = token0_address
             price *= quote_reserve / base_reserve
@@ -171,7 +174,7 @@ class NetworkApi:
         return result
 
     def deus_dex_liquidity_for_pair(self, pair_address):
-        
+
         pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         token0_address = pair.functions.token0().call()
         token1_address = pair.functions.token1().call()
@@ -191,7 +194,7 @@ class NetworkApi:
         return int(deus_reserve * self.get_deus_price() + quote_reserve * self.get_token_price(quote_address))
 
     def dei_dex_liquidity_for_pair(self, pair_address):
-        
+
         pair = self.http_w3.eth.contract(pair_address, abi=PAIR_ABI)
         token0_address = pair.functions.token0().call()
         token1_address = pair.functions.token1().call()
@@ -276,7 +279,7 @@ class NetworkApi:
         return int(res)
 
     def deus_emissions(self):
-         
+
         # master_chef_contract = self.w3.eth.contract(CONFIG[self.chain_id]['master_chef'], abi=MASTER_CHEF_ABI)
         # total_alloc = 0
         # total_emission = 0
