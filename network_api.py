@@ -42,9 +42,9 @@ class NetworkApi:
             DEI_USDC_LENDING_ADDRESS, abi=DEI_USDC_LINDING_ABI)
         self.deus_dei_lending_contract = self.http_w3.eth.contract(
             DEUS_DEI_LENDING_ADDRESS, abi=DEUS_DEI_LENDING_ABI)
-        self.socket_dei_contract = self.w3.eth.contract(
+        self.socket_dei_contract = self.w3_socket.eth.contract(
             DEI_ADDRESS, abi=DEI_ABI)
-        self.socket_deus_contract = self.w3.eth.contract(
+        self.socket_deus_contract = self.w3_socket.eth.contract(
             DEUS_ADDRESS, abi=DEUS_ABI)
 
     @property
