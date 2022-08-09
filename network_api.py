@@ -23,7 +23,7 @@ class NetworkApi:
         self.rpc_socket = rpc_socket
         self.rpc_http = rpc_http
         self.w3_socket = Web3(WebsocketProvider(self.rpc_socket))
-        self.http_w3 = Web3(HTTPProvider(self.rpc_http))
+        self.http_w3 = Web3(HTTPProvider(self.rpc_http[0]))
         self.is_poa = is_poa
         if is_poa:
             self.w3_socket.middleware_onion.inject(
