@@ -38,19 +38,21 @@ class EventDB:
         self.networks = dict()
         for chain_id, value in CONFIG.items():
             self.networks[chain_id] = NetworkApi(
-                rpc=value['rpc'],
-                rpc_http=value['rpc_http'],
+                rpc_socket=value.get('rpc_socket'),
+                rpc_http=value.get('rpc_http'),
                 chain_id=chain_id,
-                source_price_chain=value['source_price_chain'],
-                dei_ignore_list=value['dei_ignore_list'],
-                deus_ignore_list=value['deus_ignore_list'],
-                usdc_address=value['usdc_address'],
-                pairs=value['pairs'],
-                stakings=value['stakings'],
-                path_to_usdc=value['path_to_usdc'],
-                bet_pool_ids=value['bet_pool_ids'],
-                bet_address=value['bet_address'],
-                is_poa=value['is_poa'],
+                deus_ignore_list=value.get('deus_ignore_list'),
+                usdc_address=value.get('usdc_address'),
+                uni_pairs=value.get('uni_pairs'),
+                uni_dei_pairs=value.get('uni_dei_pairs'),
+                uni_deus_pairs=value.get('uni_deus_pairs'),
+                path_to_usdc=value.get('path_to_usdc'),
+                is_poa=value.get('is_poa'),
+                token_addresses = value.get('token_addresses'),
+
+                stakings=value.get('stakings'),
+                bet_pool_ids=value.get('bet_pool_ids'),
+                bet_address=value.get('bet_address'),
             )
 
     def insert(self, table_name: str, documents: List[dict]):

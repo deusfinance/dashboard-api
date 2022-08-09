@@ -3,11 +3,6 @@
 import json
 import sys
 
-proxies = {
-  #'http': 'socks5h://127.0.0.1:9992',
-  #'https': 'socks5h://127.0.0.1:9992',
-}
-
 
 try:
     import requests
@@ -74,7 +69,7 @@ class TgSender:
         :type data: dict
         """
         try:
-            requests.post(url=url, data=data, proxies=proxies)
+            requests.post(url=url, data=data)
         except NameError as ex:
             self.__http.request(url=url, method='POST', fields=data)
             print(ex)
