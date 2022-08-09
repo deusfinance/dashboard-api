@@ -112,7 +112,7 @@ def get_dei_dex_liquidity():
 
 
 @app.route('/info', methods=['GET'])
-@exception_decorator
+# @exception_decorator
 def get_info():
     return {
         'deus_price': event_db.get_deus_price(),

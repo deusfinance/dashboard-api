@@ -188,8 +188,8 @@ class EventDB:
                 sort=[('block', DESCENDING)])
             if not last_item:
                 last_week = int(time.time()) - 7 * 24 * 60 * 60
-                last_block = network.w3.eth.block_number
-                while network.w3.eth.get_block(last_block).timestamp >= last_week:
+                last_block = network.http_w3.eth.block_number
+                while network.http_w3.eth.get_block(last_block).timestamp >= last_week:
                     last_block -= 100000
             else:
                 last_block = last_item['block']
@@ -203,8 +203,8 @@ class EventDB:
                 sort=[('block', DESCENDING)])
             if not last_item:
                 last_week = int(time.time()) - 7 * 24 * 60 * 60
-                last_block = network.w3.eth.block_number
-                while network.w3.eth.get_block(last_block).timestamp >= last_week:
+                last_block = network.http_w3.eth.block_number
+                while network.http_w3.eth.get_block(last_block).timestamp >= last_week:
                     last_block -= 1000
             else:
                 last_block = last_item['block']
@@ -364,7 +364,7 @@ class EventDB:
 
     def get_deus_emissions(self, interval):
         from_time = int(time.time()) - interval
-        current_block = self.networks[250].w3.eth.block_number
+        current_block = self.networks[250].http_w3.eth.block_number
         last_week_record = self.db['deus_emissions'].find_one({'timestamp': {'$lte': from_time}},
                                                               sort=[('timestamp', DESCENDING)])
         if not last_week_record:
