@@ -39,7 +39,7 @@ class EventDB:
         for chain_id, value in CONFIG.items():
             self.networks[chain_id] = NetworkApi(
                 rpc_socket=value.get('rpc_socket'),
-                rpc_http=value.get('rpc_http'),
+                rpc_http=value.get('rpc_http')[0],
                 chain_id=chain_id,
                 deus_ignore_list=value.get('deus_ignore_list'),
                 usdc_address=value.get('usdc_address'),
